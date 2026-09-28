@@ -67,19 +67,33 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 - Trigger evidence: this prerequisite closeout changed one documentation file; the 4+ file project map was supplied by the prior delegated read-only audit and reused rather than repeated.
 - [x] Confirm movement distance: each directional movement card translates the central pivot exactly one board cell in the selected ship-relative direction.
 - Acceptance: blockers are recorded with evidence and no source assumptions are introduced; package/test prerequisites are reconciled and an EditMode runner path is documented.
-- Verification evidence: local Unity project/package audit; Unity 6.3 LTS [Test Framework command-line reference](https://docs.unity3d.com/6000.3/Documentation/Manual/test-framework/reference-command-line.html), [test assembly setup](https://docs.unity3d.com/6000.3/Documentation/Manual/test-framework/workflow-create-test-assembly.html), and [assembly reference rules](https://docs.unity3d.com/6000.3/Documentation/Manual/assembly-definitions-referencing.html). The command has not yet been run because no test assembly/spec exists.
+- Verification evidence: local Unity project/package audit; Unity 6.3 LTS [Test Framework command-line reference](https://docs.unity3d.com/6000.3/Documentation/Manual/test-framework/reference-command-line.html), [test assembly setup](https://docs.unity3d.com/6000.3/Documentation/Manual/test-framework/workflow-create-test-assembly.html), and [assembly reference rules](https://docs.unity3d.com/6000.3/Documentation/Manual/assembly-definitions-referencing.html). At the CDM-00 commit, no test assembly/spec existed; the first runnable test and its RED evidence are recorded under CDM-01.
 - Checks: project/package/repository audit and documentation review completed; Unity tests are N/A for this documentation-only prerequisite task because the test assembly/spec does not exist yet; runtime harness is N/A because this task changes no runtime behavior.
 - Rollback boundary: revert only `odd/tasks/card-deck-mechanic.md`; do not revert unrelated local package, project-setting, or Unity Skills setup changes.
-- Work-unit commit: pending local documentation commit; no gameplay source changes are included.
+- Work-unit commit: `8cf6fc36066442f023578227753ec127cf56a731` (`docs(card-mechanic): reconcile setup and delivery plan`); this documentation-only commit contains no gameplay source.
+- RDD review: the post-commit assessment was high/unassessable because pre-existing unrelated untracked files were not inventoried. The exact preflight isolated only `odd/tasks/card-deck-mechanic.md` and excluded that unrelated inventory; after the user's grant, native review lineage `review-10b6dfb9281b7a62` completed low-risk (`non_executable_only`) and was acknowledged as approved. Reviewed boundary: this commit. This grant was for this review only; it did not authorize push/PR.
 
-### CDM-01 — Model card definitions and per-player deck/hand
-- [ ] Add an Editor-only Test Framework assembly (`TestAssemblies`) and run the first asset-catalog specification to an observed RED result before defining the card assets.
-- [ ] Define immutable authored card data and the 12 ScriptableObject assets.
-- [ ] Implement independently seeded per-player deck state, auto-refill, 3-card hand, max-2 selection, and return-to-owner behavior.
-- [ ] Add focused tests for the pure deck/hand rules.
-- Route: delegated direct; writer trigger applies because this spans multiple non-trivial scripts/assets/tests.
-- Acceptance: deck/hand behaviors satisfy the rules above and can be tested without scene lookups. Test assemblies use `TestAssemblies` and Editor-only platform settings. Before tests reference gameplay types, put those types in an explicit runtime assembly; Unity custom asmdefs cannot reference predefined `Assembly-CSharp`.
-- TDD evidence: the initial catalog test must compile and report an assertion failure for the currently absent 12-card asset catalog; do not add the card data or deck implementation until that RED is observed.
+### CDM-01A — Define the authored card catalog
+- [x] Add an Editor-only Test Framework assembly (`TestAssemblies`) and run the initial catalog-count specification to RED before defining card assets.
+- [x] Extend the catalog specifications for all 12 canonical names, their Defense/Movement/Attack categories, and the three confirmed damage values; observe RED before defining card assets.
+- [x] Define immutable authored card data and create exactly 12 ScriptableObject assets.
+- Route: delegated direct; the writer trigger applies because this touches runtime data code, assembly definitions, authored assets, and tests.
+- Trigger evidence: the work spans multiple non-trivial files, so the parent delegates one bounded writer after recording the expanded RED.
+- Acceptance: exactly one asset for every agreed card; serialized category and attack damage values match the accepted rules. Tests that reference gameplay types must use an explicit runtime assembly because custom asmdefs cannot reference predefined `Assembly-CSharp`.
+- TDD evidence: the first filtered EditMode run compiled and failed the exact-12 catalog test: expected 12 `CardDefinition` assets, found 0 (1 total, 0 passed, 1 failed; XML `%TEMP%/NavalCommander-CardCatalog-RED.xml`, log `%TEMP%/NavalCommander-CardCatalog-RED.log`). After extending the specification, a second filtered run compiled all three tests and observed RED: 3 total, 0 passed, 3 failed. The tests reported 0 assets, then missing `Missile`/`Shield` definitions; XML `%TEMP%/NavalCommander-CardCatalog-Rules-RED.xml`, log `%TEMP%/NavalCommander-CardCatalog-Rules-RED.log`.
+- Verification note: the first import attempt after authoring assets was blocked by invalid hand-written `.meta` YAML (Unity reported `Shield.asset.meta` parser failure at line 8 and invalid folder/asset GUID metadata); it emitted no test result XML, so this was not a card assertion result. All 17 new sidecars were corrected to Unity's valid importer format, preserving GUIDs. The final import/test run reported no metadata parse errors.
+- Verification command: `& 'C:/Program Files/Unity/Hub/Editor/6000.3.17f1/Editor/Unity.exe' -batchmode -projectPath 'C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git' -runTests -testPlatform EditMode -assemblyNames 'NavalCommander.CardMechanics.Tests' -testFilter 'NavalCommander.CardMechanics.Tests.CardDefinitionCatalogTests' -testResults "$env:TEMP/NavalCommander-CardCatalog-Rules-GREEN-AfterMetaFix.xml" -logFile "$env:TEMP/NavalCommander-CardCatalog-Rules-GREEN-AfterMetaFix.log"`. Result: passed all 3 tests (3 total, 3 passed, 0 failed); XML at `%TEMP%/NavalCommander-CardCatalog-Rules-GREEN-AfterMetaFix.xml`, log at `%TEMP%/NavalCommander-CardCatalog-Rules-GREEN-AfterMetaFix.log`. Structural inspection confirmed exactly 12 unique asset names and IDs, all asset script references target `CardDefinition.cs`, categories match Defense/Movement/Attack, and attack damage values are Missile 30, Torpedo 50, Three-Shot 40 per hit cell.
+- Runtime harness: N/A for this slice because it only authors card metadata/assets; no runtime gameplay behavior is implemented yet.
+- Rollback boundary: remove `Assets/Scripts/CardMechanics/` and its folder meta, `Assets/Data/CardDefinitions/` and their folder metas, and `Assets/Tests/CardMechanics/` plus its folder metas; revert only this task's tracker section. Preserve all unrelated local project/setup changes.
+- Work-unit commit: pending local commit on `feat/card-deck-mechanic`; RDD assessment pending.
+- Runner scope note: `Packages/manifest.json` includes the Unity-Skills package in `testables`; use Unity 6.3 `-assemblyNames NavalCommander.CardMechanics.Tests` and `-testFilter NavalCommander.CardMechanics.Tests.CardDefinitionCatalogTests` to avoid unrelated package tests.
+
+### CDM-01B — Implement per-player deck and hand rules
+- [ ] Implement independently seeded per-player deck state, automatic empty-slot refill, a 3-card hand, max-2 selection, and return-to-owner behavior.
+- [ ] Add focused tests for the pure deck/hand rules and observe RED before implementation.
+- Route: delegated direct; deck state and its behavior tests touch multiple non-trivial files.
+- Trigger evidence: multiple non-trivial state and test files are required, so implementation will be delegated after the writer observes the deck/hand RED.
+- Acceptance: a player's deck contains exactly one of each card; refill preserves unused cards and never introduces a draw/discard action; a maximum of two selections is enforced per turn; used cards return to the same owner's pool and blocked movements remain in hand while counting as a selection.
 
 ### CDM-02 — Add authoritative hidden turn submission
 - [ ] Integrate a server-owned turn/action coordinator with NGO.
@@ -115,28 +129,32 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 - TDD mode: enabled; test-first (RED → GREEN → REFACTOR), explicitly selected by the user.
 - Test framework: Unity Test Framework 1.6.0 is present in the clone manifest/lockfile and PackageCache. The installed editor is `C:/Program Files/Unity/Hub/Editor/6000.3.17f1/Editor/Unity.exe`.
 - EditMode runner (PowerShell): `& 'C:/Program Files/Unity/Hub/Editor/6000.3.17f1/Editor/Unity.exe' -batchmode -projectPath 'C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git' -runTests -testPlatform EditMode -testResults "$env:TEMP/NavalCommander-EditMode.xml" -logFile "$env:TEMP/NavalCommander-EditMode.log"`. Unity's Test Framework command-line reference documents these arguments; `-quit` is not supported while tests are running. This invocation remains to be exercised after the test assembly/spec is added.
-- Test setup still needed: create a focused EditMode test assembly and verify a real RED result before writing the corresponding production behavior. No `.asmdef`, test source, `.runsettings`, CI test command, or preconfigured task runner exists yet.
+- Test setup: the Editor-only card mechanic test assembly and catalog tests exist; expanded catalog tests were observed RED before defining cards and now pass after implementation. Tests that reference gameplay types use the explicit `NavalCommander.CardMechanics` runtime assembly because custom asmdefs cannot reference predefined `Assembly-CSharp`.
 - Delivery strategy: `ask-on-risk` (default); forecast is approximately 700 authored changed lines (exclude generated Unity files). The user selected `feature-branch-chain` on 2026-09-28 after the required ask-on-risk gate.
 - Planned local work-unit / PR boundaries (provisional until authored line counts are measured; each PR slice depends on the previous one):
   1. Tracker/prerequisite closeout (CDM-00): current documentation-only commit; tracker-PR association pending, commit identity to be recorded after commit.
-  2. Card definitions and per-player deck/hand (CDM-01): tests with card data and deck behavior; commit/child PR identity pending.
-  3. Authoritative hidden turn submission (CDM-02): private player state, submission validation, and turn gating; commit/child PR identity pending.
-  4. Deterministic card effects (CDM-03): defense, movement, attacks, damage, and their tests; commit/child PR identity pending.
-  5. Private hand UI and setup documentation (CDM-04): three slots, selection/targets, informational deck view; commit/child PR identity pending.
-  6. Integrated host/client verification (CDM-05): smoke test and recorded evidence; commit/child PR identity pending.
+  2. Authored card catalog (CDM-01A): card data, 12 assets, and catalog tests; commit/child PR identity pending.
+  3. Per-player deck and hand (CDM-01B): deterministic shuffle/refill/reuse and hand-limit tests; commit/child PR identity pending.
+  4. Authoritative hidden turn submission (CDM-02): private player state, submission validation, and turn gating; commit/child PR identity pending.
+  5. Deterministic card effects (CDM-03): defense, movement, attacks, damage, and their tests; commit/child PR identity pending.
+  6. Private hand UI and setup documentation (CDM-04): three slots, selection/targets, informational deck view; commit/child PR identity pending.
+  7. Integrated host/client verification (CDM-05): smoke test and recorded evidence; commit/child PR identity pending.
 - Feature-branch-chain remote tracker/child PRs have not been created. Push, PR creation, and other remote operations remain unauthorized; do not perform them without explicit permission.
 - Git boundary: implementation checkout is C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git on feat/card-deck-mechanic; source snapshot NavalComander remains outside Git. Local commits are possible on this branch. Push is not authorized and remote write access is unknown; do not push.
 
 ## Progress and Next Step
 - Requirements mapping: complete. Clone/branch, dependencies, package assets, test package, and documented runner path are reconciled. Pivot-based movement, hidden-ship blocking, forward-point projectile origin, ship-relative movement/aim directions, blocked movement/rotation outcomes, one-cell movement distance, and board-boundary rules are confirmed.
-- Source implementation: not started. No code edits or pushes.
-- Next step: add the focused EditMode test assembly and a first executable RED specification, run it with the documented Unity 6.3 Editor invocation, then implement only the behavior covered by that failing test.
+- Source implementation: CDM-01A is complete locally: immutable `CardDefinition` ScriptableObject data and exactly 12 authored card assets are implemented and catalog-tested. Per-player deck/hand state, turn submission, effects, and UI are not implemented yet. No push occurred.
+- Next step: add focused pure deck/hand behavior tests and observe RED before implementing per-player deck state under CDM-01B.
 
 ## Relevant Files
 - C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git — primary Git checkout and feature branch.
 - C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalComander — separate no-Git source snapshot used only for comparison.
 - `Packages/manifest.json` and `Packages/packages-lock.json` — reconciled direct/resolved package baseline in the implementation checkout.
 - `Assets/DefaultNetworkPrefabs.asset` — currently empty NGO prefab list; networking integration remains pending.
+- `Assets/Scripts/CardMechanics/CardDefinition.cs` and `NavalCommander.CardMechanics.asmdef` — static card data model and explicit runtime assembly.
+- `Assets/Data/CardDefinitions/` — the 12 authored card ScriptableObject assets.
+- `Assets/Tests/CardMechanics/` — Editor-only catalog specifications for names, categories, and damage.
 - `Assets/Scenes/GameScene.unity` — current scene baseline.
 - `ProjectSettings/ProjectVersion.txt` — Unity 6000.3.17f1.
 - Project GDD, pages 4–13 — turn phases, hidden selections, authority expectations; legacy draw rules superseded by current user decisions.
