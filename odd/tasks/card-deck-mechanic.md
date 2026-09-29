@@ -1,53 +1,41 @@
-# Card and Deck Mechanic — Authoritative Multiplayer
+# Card and Deck Mechanic — Card-Only Domain
 
 ## Objective
-Implement only the card/deck mechanic for NavalComander in Unity 6.3, including per-player decks, turn-based hand management, card effects, authoritative multiplayer handling, and the sketch-inspired hand UI integrated directly into `GameScene`.
+Implement and verify the 12-card catalog, per-player deck/hand rules, and a one-player card playtest in the existing `GameScene` for NavalComander in Unity 6.3. Multiplayer/network behavior is out of scope.
 
 ## Problem and Why
-The project has no gameplay/card system yet. The user wants the 12-card mechanic implemented cleanly, with static card definitions in ScriptableObjects, focused scripts (no God Script), and server authority so opponents cannot inspect each other's hand or hidden choices. The original no-Git Unity folder is only a source snapshot; implementation will use the newly cloned Git checkout after reconciling verified project differences.
-
+The user explicitly pivoted away from premature multiplayer implementation and clarified that cards should be playable in `GameScene` for one player. Keep the authored card catalog and pure card/deck domain; remove the coordinator, NGO bridge, Host/Join and networked presentation work introduced for the earlier scope. Preserve unrelated project changes and pre-existing multiplayer package/prefab assets whose provenance is ambiguous; do not change or add network functionality.
 
 ## Working Checkout and Snapshot Reconciliation
-- Primary implementation checkout: C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git.
-- Local branch: feat/card-deck-mechanic, created from origin/main at base commit fbc31ba16a157c9d44f8a3bfcb2ec252ea3db1f7.
-- The original NavalComander folder is a separate Unity project snapshot with no .git; do not use it as the implementation checkout.
-- Both trees use Unity 6000.3.17f1 and share the gameplay scenes and NetworkManager asset. Their manifests/lockfiles are reconciled: NGO 2.13.3 is a direct dependency, Unity Transport 2.7.3 is resolved transitively, and Unity Test Framework 1.6.0 is present in the clone. The package versions match the source snapshot; no new package install is required.
-- `Assets/DefaultNetworkPrefabs.asset` exists in both trees but its prefab list is empty. No gameplay scripts/tests/asmdefs or NGO components are present in scenes/prefabs yet, so the required networking integration remains implementation work.
-- ProjectSettings/ProjectSettings.asset differs in product and Unity Cloud metadata; do not copy it between trees.
-- Clone used public HTTPS without credentials; no push has occurred and remote write access is unverified.
-- The checkout already contains unrelated local Unity/project setup changes and untracked Unity Skills files. Preserve them and stage only card-feature paths for work-unit commits.
-- User code-location preference (2026-09-28): keep all feature C# files under `Assets/Scripts`; place test scripts in `Assets/Scripts/CardMechanics/Tests/` behind a nested Editor-only test asmdef so they do not enter the runtime assembly or player build.
+- Primary checkout: `C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git`, branch `feat/card-deck-mechanic`.
+- The source snapshot at `.../NavalComander` is separate and has no Git history; do not use it for implementation.
+- The project uses Unity 6000.3.17f1 and Unity Test Framework 1.6.0. Existing catalog/deck assets and tests are the retained baseline.
+- NGO and Unity Transport package entries and `Assets/DefaultNetworkPrefabs.asset` predate this feature in the source snapshot; their provenance is ambiguous. Preserve them, do not treat them as part of the premature implementation.
+- Preserve unrelated dirty project settings, editor configuration, Unity Skills files, and local artifacts. Do not push or perform other remote operations.
+- All feature C# stays under `Assets/Scripts`; EditMode tests stay under `Assets/Scripts/CardMechanics/Tests/` in an Editor-only test assembly.
 
 ## Authorized Scope
-- In-match deck, hand, action selection/submission, action resolution, card effects, and minimal host/client wiring needed to exercise the mechanic.
-- UI for the map area, a decorative deck indicator (not a draw button), and three private hand slots; at most two selected cards.
-- Use the existing `GameScene` board/sea visual as the gameplay map, place ships in that scene, and frame the complete playable map with its camera. Do not create a throwaway sandbox scene. Map color changes are deferred.
-- No lobby, matchmaking, progression, full ship-placement flow, or online service setup in this feature.
+- Author exactly the agreed 12 card definitions and implement the pure card/deck/hand rules and card effects with focused tests; then provide a one-player card playtest in the existing `GameScene`.
+- Preserve each player's independent deterministic deck stream, 3-card hand, automatic empty-slot refill, max 2 selected uses, played-card reuse, and blocked-movement retention.
+- Implement agreed Defense → Movement → Attack resolution semantics and damage values in card/gameplay domain code, without NGO or network authority. A focused local hand/input UI and `GameScene` playtest are in scope as later card-only work.
+- Do not modify pre-existing multiplayer infrastructure or add network functions: no ownership/privacy bridge, Host/Join, turn deadline/disconnect handling, or network prefab setup. Preserve the existing map appearance. Earlier CDM-02, networked CDM-04 implementation, and multiplayer CDM-05 work is superseded below; its test/commit/review record remains historical only.
 
 ## Accepted Requirements and Constraints
-- All ship types use the same 12 cards; every player has their own individual 12-card deck.
-- Match-seeded randomization; derive independent per-player random streams from the match seed and stable player identity so players do not receive mirrored deck orders.
-- Hand limit 3. At each turn start, preserve unused hand cards and automatically fill empty slots. No player-initiated draw, action-count draw, or discard. At most 2 cards are played per turn. Played cards return to their owner's general deck pool for future reuse. A movement card blocked by an invalid destination does not execute and remains in hand instead of returning to the deck; its selection still counts as one of the two permitted card uses that turn.
-- The opponent must not see another player's hand, remaining deck, or selected actions before resolution. The server owns authoritative state and validates submitted actions.
+- There are exactly 12 cards shared by ship types, with a separately seeded deck instance for each player. Derive independent deterministic random streams from the match seed and stable in-match player identity.
+- Hand limit is 3. At turn start preserve unused cards and refill only empty slots. There is no player-initiated draw, action-count draw, or discard. At most 2 cards are selected per turn. Played cards return to that player's pool for later automatic refill. A movement card blocked by an invalid destination remains in hand but still consumes a selected-use count.
 - Card set: Defense—Shield, Mirror; Movement—Rotate Right 90°, Rotate Left 90°, Rotate 180°, Move Left, Move Right, Move Up, Move Down; Attack—Missile, Torpedo, Three-Shot.
-- Ship health is 100. Missile damage 30, Torpedo damage 50, Three-Shot damage 40 for every ship-occupied cell hit.
-- Missile and Torpedo target input is direction-only: the player chooses a direction of travel, not an exact board cell. Each projectile starts at the attacking ship's forward point, travels toward the board edge unless a wall/obstacle stops it, damages only the first ship encountered, and is destroyed on ship impact. No damage to walls/obstacles is specified. Movement and Missile/Torpedo directions are relative to the ship's orientation, not fixed to the board axes.
-- For a spawned NGO projectile, the server must call `NetworkObject.Despawn()` on ship impact (default behavior destroys the associated GameObject and synchronizes despawn); do not call client-side `Object.Destroy` on a NetworkObject. For a local-only projectile, Unity's runtime API is `Destroy(gameObject)`. References: [Unity Object.Destroy](https://docs.unity3d.com/6000.0/ScriptReference/Object.Destroy.html), [NGO object spawning and despawning](https://docs-multiplayer.unity3d.com/netcode/current/basics/object-spawning/).
-- Networking dependency baseline: NGO 2.13.3 (direct) and Unity Transport 2.7.3 (transitive) are reconciled in the implementation clone and source snapshot. No networking behavior is wired yet; authoritative turn submission and network prefab registration are feature work.
-- All selected cards execute when the turn resolves at turn end; preserve the GDD phase order Defense → Movement → Attack and simultaneous/hidden selection. Movement/rotation actions operate on the ship GameObject's central pivot. Move-card directions and Missile/Torpedo aiming directions are relative to the ship's orientation. Each Move Left/Right/Up/Down action translates the central pivot exactly one board cell in the selected ship-relative direction. A translation is invalid if it would move into an obstacle, wall, or another ship's occupied cells, including hidden ships. Movement and rotation are also invalid if any part of the ship's final occupied footprint would end outside the playable board. If a selected movement is blocked, it does not execute and its card remains in hand rather than returning to the deck; selecting it still counts toward the two-card limit for that turn. New user decisions override legacy draw rules.
-- Shield and Mirror last only for the current turn, cover one occupied cell of the ship rather than its full footprint, and are consumed by the first incoming attack against that protected cell. The player chooses which occupied cell to defend. Mirror returns the incoming attack toward its origin.
-- The local Git workflow is established in NavalCommander-git on feature branch feat/card-deck-mechanic; the original NavalComander snapshot has no .git. The user reports they may lack remote write access; no push has occurred. The user chose test-first TDD; Unity Test Framework 1.6.0 is verified in the clone and source snapshot.
+- Ship health is 100. Missile damage is 30, Torpedo damage is 50, and Three-Shot damage is 40 for every ship-occupied cell hit.
+- All selected cards resolve at turn end in Defense → Movement → Attack phase order. Movement/rotation operate on the ship's central pivot; each directional movement translates the pivot by one board cell in the selected ship-relative direction. Missile/Torpedo aim is a direction relative to ship orientation, launched from the ship's forward point, travels toward the board edge, is stopped by walls/obstacles, and damages only the first ship encountered. Wall/obstacle damage is unspecified.
+- Shield and Mirror last only for the current turn, protect one owner-chosen occupied ship cell, and are consumed by the first incoming attack on that cell. Mirror returns the incoming attack toward its origin.
+- Movement/rotation is invalid if the final footprint intersects an obstacle, wall, another ship, or the board boundary. A blocked move/rotation does not execute and its card remains in hand; selected use still counts. No other invalid-action outcome should be invented.
+- Existing Unity/NGO-specific projectile destruction behavior is not part of the current card-only scope. Effect implementation should keep domain rules independent of network APIs.
+- User-selected TDD remains enabled: observed RED → GREEN → REFACTOR, using Unity Editor Test Runner EditMode and `NavalCommander.CardMechanics.Tests`.
 
 ## Acceptance Criteria
-- A player has a private, independently seeded deck containing exactly one of each of the 12 configured cards.
-- At turn start, only empty hand slots are auto-filled up to 3; used cards return to the same player's deck, while a blocked movement card remains in hand. No draw/discard UI or command exists.
-- A player can submit no more than 2 selected cards per turn; a blocked movement selection still counts against this limit. Invalid, late, unauthorized, or duplicate submissions are rejected by the server.
-- Server resolves submitted actions only after all active players confirm or the configured turn timeout is reached; secret choices and private hand/deck state are not broadcast to other players.
-- Resolution follows the agreed phases and card values. Defense lasts through the current turn, covers the one occupied ship cell chosen by its owner, and is consumed by its first incoming attack; Mirror returns that attack toward its origin. Missile/Torpedo use direction-only targeting and launch from the ship's forward point; they can travel as far as the board edge, are stopped by walls/obstacles, damage only the first ship encountered, and are destroyed on ship impact. For a spawned NGO projectile, destruction is server-authoritative through `NetworkObject.Despawn()`. A blocked movement or rotation does not execute, leaves its card in hand, and still counts as one of the two card uses for that turn. Rotation validity checks the ship's full final occupied footprint against walls, obstacles, other ships, and the playable board boundary; no part of the ship may end outside the board. Other invalid-action outcomes remain unresolved and must not be invented.
-- Hand UI shows exactly 3 private slots, supports selection of up to 2 cards, lets the player choose one occupied ship cell for Shield/Mirror and a travel direction for Missile/Torpedo, and presents the deck as informational only.
-- Play Mode integration uses `GameScene` and its existing map visual; ships are visible on that map and the Game Camera frames the entire playable area. Color/lighting restyling is explicitly deferred.
-- Focused automated tests cover deck seeding/refill/reuse/limits, server-side submission/privacy/resolution, and damage/effect rules; multiplayer smoke test verifies host plus at least one client.
-
+- Catalog tests find exactly one configured asset for each of the 12 agreed cards, with the expected categories and damage values.
+- Deck tests prove deterministic independent streams, empty-slot-only refill, hand limit, max-two selected uses, played-card reuse, and blocked movement retention.
+- Focused domain tests cover the agreed card effects, phase ordering, targeting semantics, damage values, and invalid movement/rotation outcomes. Three-Shot footprint and 90° rotation snap for two-cell ships must be resolved before dependent behavior is implemented.
+- A one-player card playtest must ultimately run in the existing `GameScene`; no multiplayer/network integration is required. Do not infer logical board geometry from the sea sprite.
 ## Checklist
 
 ### CDM-00 — Resolve implementation prerequisites and remaining rules
@@ -114,14 +102,16 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 - Trigger evidence: multiple non-trivial state and test files are required, so implementation will be delegated after the writer observes the deck/hand RED.
 - Acceptance: a player's deck contains exactly one of each card; refill preserves unused cards and never introduces a draw/discard action; a maximum of two selections is enforced per turn; used cards return to the same owner's pool and blocked movements remain in hand while counting as a selection.
 
-### CDM-02 — Add authoritative hidden turn submission
-- [x] CDM-02A: implement the match-local, server-only turn coordinator and focused behavior tests.
-- [ ] Integrate a server-owned turn/action coordinator with NGO.
-- [ ] Keep hand/deck/action choices private to the owning client; expose only permitted results.
-- [ ] Validate ownership, phase, action count, card ownership, and confirmation on the server.
-- [x] Add focused Editor-only tests for client/slot ownership, the two-card limit, confirmation/phase gating, duplicate and late submissions, owner-only private hands, and explicit action outcomes before the next turn.
-- [x] CDM-02B: add a thin NGO bridge in its own networking assembly: explicit server initialization for exactly two connected clients, stable match-local slots, authenticated sender mapping, owner-targeted hand snapshots, and server-only resolution handoff. No timeout, prefab registration, or scene wiring in this slice.
-- [ ] CDM-02C: add a configurable turn deadline only after focused timeout RED/GREEN evidence; timeout/disconnect policy is not part of CDM-02B.
+### CDM-02 — Add authoritative hidden turn submission (SUPERSEDED by the 2026-09-29 card-only scope pivot)
+- Historical record only: the implementation and related test sources were removed; the RED/GREEN, commit, review, compile, and ILPP records below are retained as historical evidence, not current requirements.
+- [x] [SUPERSEDED] CDM-02A coordinator and its tests were completed historically; the source/tests are removed under the current card-only pivot.
+- [ ] [SUPERSEDED — do not implement] Integrate a server-owned turn/action coordinator with NGO.
+- [ ] [SUPERSEDED — do not implement] Keep hand/deck/action choices private to the owning client over a network.
+- [ ] [SUPERSEDED — do not implement] Validate ownership, phase, action count, card ownership, and confirmation on a server.
+- [x] [SUPERSEDED] The coordinator test suite passed historically; the coordinator-specific tests are removed with that implementation. The domain deck/catalog tests remain in scope.
+- [x] [SUPERSEDED] CDM-02B NGO bridge was authored historically and is removed by the current scope rollback.
+- [ ] [SUPERSEDED — do not implement] CDM-02C network turn deadline/disconnect policy.
+- [ ] [SUPERSEDED — do not implement] CDM-02D GameScene networking installer, Host/Join bootstrap, and networked hand presentation.
 - Route: delegated direct; CDM-02A used a delegated test writer followed by a bounded coordinator writer after observed RED. CDM-02B is a separate networking adapter writer that reuses the tested domain contract without adding gameplay rules.
 - Trigger evidence: four-plus files and local NGO package/skill mapping were needed for this network trust-boundary work; bridge source and a nested asmdef are multiple non-trivial artifacts.
 - TDD RED observed (2026-09-29 12:15:35 local): the user ran `NavalCommander.CardMechanics.Tests.TurnSubmissionCoordinatorTests` in the already-open Unity Editor. `C:/Users/tobia/AppData/LocalLow/MP Group/Naval Commander/TestResults.xml` records 6 total, 0 passed, 6 failed. Every case reached an `Expected: True / But was: False` assertion in the inert coordinator contract; no setup/compile error or exception was reported. This is behavioral RED for server ownership, selection limits, confirmation/phase gating, private hand access, and outcome-before-next-turn. No second Unity process was launched.
@@ -133,76 +123,84 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 - CDM-02B implementation authored in `Networking/TurnSubmissionNetworkBridge.cs` and `Networking/NavalCommander.CardMechanics.Networking.asmdef`: only the server creates two per-client decks, assigning stable slot indices from sorted connected client IDs within this match. Client requests carry card data only; server ownership comes from `RpcParams.Receive.SenderClientId`. Private hand IDs are sent only through a server-invoked `SpecifiedInParams` RPC to `RpcTarget.Single(owner, Temp)` and are locally resolved against the authored catalog; no NetworkVariable or broadcast carries hands/actions. The bridge exposes owner-local UI callbacks and server-only resolution/outcome/next-turn methods; timeout, bootstrap, prefab registration, and scene setup remain out of scope.
 - CDM-02B static verification (2026-09-29): local PackageCache reports NGO 2.13.3; its source confirms `RpcParams.Receive.SenderClientId`, `RpcInvokePermission.Server`, `NetworkManager.ConnectedClientsIds`, `RpcTarget.Single(clientId, RpcTargetUse.Temp)`, and local-client target routing. The nested asmdef JSON parses and references `NavalCommander.CardMechanics` plus `Unity.Netcode.Runtime`; bridge RPC request signatures contain no sender-ID payload, braces are balanced, new meta GUIDs are unique in `Assets`, and source/tracker whitespace checks pass. The current Editor.log last-write time (12:37:10 local) predates bridge source edits (12:50+), so compilation is unverified. No bridge-specific EditMode result or host/client PlayMode smoke is claimed.
 - CDM-02B local compile check (2026-09-29 13:07 local): the existing `NavalCommander.CardMechanics.csproj` built with `dotnet build` after an offline local-only restore; its three warnings are Unity-serialized `CardDefinition` fields, not bridge errors. An ignored `Temp/BridgeCompile/BridgeCompile.csproj` then compiled the new bridge source against the current domain DLL, UnityEngine DLLs, and the project's NGO 2.13.3 runtime DLL: 0 warnings, 0 errors. This checks C# and referenced API shape, NOT Unity asset import, NGO IL post-processing, or host/client behavior; the open Editor has not refreshed these new files yet.
+- CDM-02B Unity ILPP RED (2026-09-29 14:14 local): the already-open Editor's `C:/Users/tobia/AppData/Local/Unity/Editor/Editor.log` recorded four console errors from one root cause at `TurnSubmissionNetworkBridge.cs:200`: NGO 2.13.3 could not serialize or deserialize the `System.String[]` parameter of `ReceivePrivateHandClientRpc`. This is observed Unity import/IL post-processing RED, not an EditMode behavioral-test result. The bridge now sends an integer count plus three scalar card-ID strings; the owner-targeted RPC and count/catalog validation remain in place, and the receiver reads only the declared entries. Unity auto-recompile/ILPP GREEN is pending parent verification; no test or host/client result is inferred from the source edit.
+- CDM-02B post-fix local check (2026-09-29 14:19 local): the ignored offline `Temp/BridgeCompile/BridgeCompile.csproj` rebuilt the edited bridge against installed Unity/NGO DLLs with 0 errors and 0 warnings; `git diff --cached --check` passed for the feature-only staged paths. `Editor.log` still has no import after the source edit, so Unity ILPP GREEN remains pending.
 - CDM-02B runtime harness: N/A for this bridge-only work unit because no `NetworkManager` or `NetworkObject` is configured in `GameScene` yet; the integration slice must run a two-client host/client PlayMode smoke. Rollback boundary: remove only `Assets/Scripts/CardMechanics/Networking.meta` and `Assets/Scripts/CardMechanics/Networking/`, preserving the domain coordinator, catalog, deck, tests, and unrelated Unity setup.
+- CDM-02B work-unit commit: `6ffa1a77e71d672dda6b86a1ebcbb2d49eff414f` (`feat(card-mechanic): add private NGO turn bridge`). This committed the networking adapter, nested asmdef, Unity metas, and tracker evidence only; unrelated dirty files were not staged. No push or PR was created.
+- CDM-02B native review assessment: the committed-only range from the acknowledged boundary `061ff5685b1bbac400d58dd787769200d5345c75` through `6ffa1a77e71d672dda6b86a1ebcbb2d49eff414f` is medium risk, 352 changed lines, `review_due=false`, reason `under_budget`. The unrelated untracked scope was excluded with inventory `sha256:caa9aa3211b415c0cc7e99386231526e8ae0d601962be953915f2d7f8e2e5362`. No native review ran for this commit; it remains in the pending slice from the last acknowledged boundary.
+- CDM-02D route: delegated direct. Mapping covered the existing scene, current bridge, NGO scene-object rules, build scene order, UGUI, and camera constraints; the implementation will span multiple non-trivial runtime and Editor files. The CDM-02A observed RED/GREEN covers the reused selection/privacy domain rules; this adapter introduces no new card rule. Verify its C# assembly shape locally, then Unity import and two-client PlayMode behavior in `GameScene` before marking the integration/hand outcomes complete. No raw scene YAML authoring, and do not overwrite an unsaved scene.
+- CDM-02D implementation authored in `Presentation/GameSessionController.cs`, `CardHandPresenter.cs`, and `MapCameraFitter.cs`, with `Presentation/Editor/GameSceneCardPlaytestInstaller.cs` and separate presentation/Editor asmdefs. The Host/Join controller uses the in-scene `NetworkManager`/`UnityTransport`; the server waits for exactly two connected client IDs and both initial `OnClientConnectedCallback` synchronization completions before initializing the existing bridge. If the bridge has not spawned yet, a guarded update retries without latching a false failure. The hand presenter renders only bridge-delivered owner hand snapshots, tracks asynchronous selection acknowledgements, enforces the existing two-selection limit at the UI boundary, and shows confirmed/waiting status without claiming action resolution. No card effect, target payload, timeout, lobby, or reconnection behavior was added.
+- CDM-02D Editor installer uses Unity Editor scene/AssetDatabase APIs through `Tools/Naval Commander/Install GameScene Card Playtest`; it checks for dirty loaded scenes and aborts with instructions rather than overwriting them, prompts before switching a clean scene setup to `GameScene`, reuses named objects/components on rerun, wires the 12 unique authored definitions, and saves through `EditorSceneManager` rather than editing scene YAML. It ensures the in-scene `NetworkManager`/`UnityTransport`, `GameSession` `NetworkObject`/bridge, UGUI Canvas/EventSystem, Host/Join controls, and three card slots. Existing `GameScene` is already enabled in Build Settings. Camera fitting uses the named sea `SpriteRenderer` bounds, preserves its appearance, and reserves a configurable 25% bottom HUD area; this does not infer a logical board size from the sprite.
+- CDM-02D static checks (2026-09-29): both new asmdefs parse as JSON; local package sources confirm NGO `OnClientConnectedCallback` runs after initial client synchronization, UGUI/Input System assembly names, and `UnityTransport.SetConnectionData`; all 14 new source/asmdef/meta files exist with no trailing whitespace; new Unity meta GUIDs are unique; tracker `git diff --check` is clean. Unity Editor import, actual menu installation, host/client PlayMode smoke, and adapter-specific test results are not observed. The CDM-02A 6/6 RED/GREEN remains evidence only for the reused domain submission/privacy rules, not this scene/UI adapter. CDM-02D remains unchecked until Unity import and scene/host-client behavior are verified.
+- CDM-02D parent offline compile check (2026-09-29): ignored local-only `Temp/PresentationCompile` and `Temp/EditorInstallerCompile` projects compiled the final three presentation scripts and Editor installer against the installed Unity 6000.3.17f1, NGO 2.13.3, Input System, UGUI, Transport, domain, and bridge DLLs with 0 errors/0 warnings after suppressing only expected Unity-serialized-field CS0649. Both asmdefs parse, and the staged feature-only diff passes `git diff --cached --check`. This is not Unity import or PlayMode proof. The cohesive GameScene composition/UI authoring slice is over the advisory 400-line heuristic because its runtime controller, UGUI layout installer, camera fitting, Unity metas, and recovery evidence must stay together; no size-only code compression or artificial split was done.
 - CDM-02C timeout status: no timeout behavior or policy was implemented. A focused timeout RED is required before choosing a deadline or disconnect behavior.
 - Engram mirror: pending; this delegated runtime has no registered session ID, and no memory write was attempted.
 - Acceptance: server is the sole authority and unconfirmed selections remain private until resolution.
 
-### CDM-03 — Resolve card effects
+### CDM-03 — Resolve card effects (active card-only domain work)
 - [ ] Implement defense, movement, rotations, missile, torpedo, and three-cell attacks in phase order.
 - [ ] Apply 100 HP and the confirmed damage values; make invalid/out-of-bounds outcomes explicit.
 - [ ] Add effect/resolution tests.
 - Route: delegated direct; multiple non-trivial scripts and tests.
 - Acceptance: all card effects are deterministic and tested against agreed targeting/defense rules.
+- Scope gap for CDM-03: Three-Shot's exact hit footprint and the snap rule for 90° rotation of two-cell ships remain unresolved; obtain those product decisions before coding dependent effects. Defense-cell and missile/torpedo direction inputs remain domain requirements, not a network submission payload.
 
-### CDM-04 — Build private hand UI
-- [ ] Add a focused UGUI hand presenter and three-slot layout based on the supplied sketch.
-- [ ] Integrate ship/map presentation into `GameScene` and adjust the Game Camera to keep the complete playable map in frame; preserve the existing map colors for this pass.
-- [ ] Show the deck as a non-interactive visual; allow selecting at most two cards and displaying selected state.
-- [ ] Let the player choose the defended occupied ship cell when selecting Shield or Mirror.
-- [ ] Let the player choose a ship-relative direction of travel for Missile and Torpedo; do not target an exact board cell.
-- [ ] Add concise setup/use documentation.
+### CDM-04 — Build multiplayer-private hand UI/Host-Join setup (SUPERSEDED by the 2026-09-29 card-only scope pivot)
+- [ ] [SUPERSEDED — do not implement] Add a network-private UGUI hand presenter and three-slot layout.
+- [ ] [SUPERSEDED — do not implement] Integrate ship/map presentation into `GameScene` or adjust the Game Camera.
+- [ ] [SUPERSEDED — do not implement] Add a networked deck/hand UI for card selection.
+- [ ] [SUPERSEDED — do not implement] Add interactive defense-cell UI.
+- [ ] [SUPERSEDED — do not implement] Add interactive missile/torpedo direction UI.
+- [ ] [SUPERSEDED — do not implement in this card-only rollback] Add networked scene setup/use documentation.
 - Route: delegated direct; UI, data binding, and setup span multiple non-trivial files.
-- Acceptance: UI never exposes other players' hands and has no draw/discard actions; the user can exercise the mechanic from `GameScene` with the existing map visible and fully framed.
+- Historical acceptance only (superseded): network privacy and Host/Join UI are not active requirements. The active single-player `GameScene` playtest is tracked by CDM-07.
 
-### CDM-05 — Verify multiplayer flow and close delivery
-- [ ] Run focused tests and applicable full Unity checks.
-- [ ] Run host/client smoke test and inspect console for compile/runtime errors.
-- [ ] Record verification and work-unit commit identities here.
+### CDM-05 — Verify multiplayer flow and close delivery (SUPERSEDED by the 2026-09-29 card-only scope pivot)
+- [ ] [SUPERSEDED — do not implement] Run multiplayer-specific full Unity checks.
+- [ ] [SUPERSEDED — do not implement] Run host/client smoke test.
+- [ ] [SUPERSEDED] Record multiplayer work-unit/host-client verification; prior commit/review history is retained below.
 - Route: delegated test/verification actor where useful; no source-writing unless a separately routed fix task is needed.
-- Acceptance: all passed/failed/skipped checks are recorded honestly and each implementation task has its work-unit commit evidence.
+- Historical acceptance only (superseded): multiplayer verification/commit closure is not active scope.
 
+
+### CDM-06 — Roll back out-of-scope multiplayer integration
+- [x] Revise this tracker to make card-only/single-player card work authoritative and mark CDM-02, networked CDM-04, and multiplayer CDM-05 superseded while retaining their historical evidence.
+- [x] Remove only the coordinator, coordinator tests, Networking bridge, and Presentation/Editor installer sources and Unity metas; preserve catalog/deck assets/tests/assemblies and unrelated dirty files.
+- [x] Back up the current installer-modified `GameScene.unity` under ignored `Temp`, then restore only that scene from `HEAD`.
+- [x] Run static targeted checks and a domain-only offline compile; Unity import/reimport remains pending because the Editor is already open.
+- Route: delegated direct.
+- Trigger evidence: the rollback spans tracker, runtime/test/adapter files and scene state; parent provided the 4+ file map and exact safe deletion/restoration boundary.
+- Acceptance: the checkout retains only card catalog/deck domain and tests for this feature, has no new multiplayer scene integration, and unrelated dirty files remain unchanged. No commit/staging is part of this delegated slice; parent owns final verification.
+- Verification evidence (2026-09-29): scene backup `Temp/CardOnlyRollback-20260929-144548-170/GameScene.unity` is under Git-ignored `Temp`; only `Assets/Scenes/GameScene.unity` was restored from `HEAD`. Removed the coordinator, its tests, Networking, and Presentation sources/metas. The 12 card assets and catalog/deck sources/tests/asmdefs remain; no `Unity.Netcode` reference remains under `Assets/Scripts/CardMechanics`. Both retained asmdefs parse as JSON; focused `dotnet build Temp/CardDomainCompile/CardDomainCompile.csproj` succeeded (0 errors; three expected Unity-serialized-field CS0649 warnings); `git diff --check` passed. Unity Editor reimport/EditMode rerun is not observed. No changes were staged or committed.
+
+### CDM-07 — Enable one-player card playtesting in GameScene
+- [ ] Implement card-effect behavior against an explicit gameplay board/ship model, using RED→GREEN→REFACTOR and resolving open Three-Shot/rotation rules first.
+- [ ] Add the smallest local hand/input presenter needed to select and exercise cards in the existing `GameScene`.
+- [ ] Verify one-player Play Mode behavior and preserve the existing sea visual; do not infer grid dimensions from the sprite.
+- [ ] Do not modify pre-existing multiplayer assets/settings or add any NGO/transport/session behavior.
+- Route: delegated direct when implementation begins; domain rules, scene/presentation integration, and tests span multiple non-trivial files.
+- Trigger evidence: mapping spans 4+ source/scene/test contracts; the current rollback assignment is deliberately limited to removing only our premature networking/presentation layers.
+- Acceptance: a single player can exercise the implemented card loop in `GameScene`; no second client or multiplayer path is required.
+- TDD: enabled by user choice; observe focused EditMode RED before behavior changes, then GREEN and REFACTOR. Play Mode verification is required for the scene-facing slice.
 ## Effective TDD, Runner, and Delivery
 - TDD mode: enabled; test-first (RED → GREEN → REFACTOR), explicitly selected by the user.
-- Test framework: Unity Test Framework 1.6.0 is present in the clone manifest/lockfile and PackageCache. The installed editor is `C:/Program Files/Unity/Hub/Editor/6000.3.17f1/Editor/Unity.exe`.
-- Code location: all feature C# files go under `Assets/Scripts`; EditMode tests live under `Assets/Scripts/CardMechanics/Tests/` in a nested Editor-only test assembly.
-- EditMode runner (PowerShell): `& 'C:/Program Files/Unity/Hub/Editor/6000.3.17f1/Editor/Unity.exe' -batchmode -projectPath 'C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git' -runTests -testPlatform EditMode -testResults "$env:TEMP/NavalCommander-EditMode.xml" -logFile "$env:TEMP/NavalCommander-EditMode.log"`. Unity's Test Framework command-line reference documents these arguments; `-quit` is not supported while tests are running. This invocation remains to be exercised after the test assembly/spec is added.
-- Test setup: the Editor-only card mechanic test assembly and catalog tests exist; expanded catalog tests were observed RED before defining cards and now pass after implementation. Tests that reference gameplay types use the explicit `NavalCommander.CardMechanics` runtime assembly because custom asmdefs cannot reference predefined `Assembly-CSharp`.
-- Delivery strategy: `ask-on-risk` (default); forecast is approximately 700 authored changed lines (exclude generated Unity files). The user selected `feature-branch-chain` on 2026-09-28 after the required ask-on-risk gate.
-- Planned local work-unit / PR boundaries (provisional until authored line counts are measured; each PR slice depends on the previous one):
-  1. Tracker/prerequisite closeout (CDM-00): current documentation-only commit; tracker-PR association pending, commit identity to be recorded after commit.
-  2. Authored card catalog (CDM-01A): card data, 12 assets, and catalog tests; commit/child PR identity pending.
-  3. Per-player deck and hand (CDM-01B): deterministic shuffle/refill/reuse and hand-limit tests; commit/child PR identity pending.
-  4. Authoritative hidden turn submission (CDM-02): private player state, submission validation, and turn gating; commit/child PR identity pending.
-  5. Deterministic card effects (CDM-03): defense, movement, attacks, damage, and their tests; commit/child PR identity pending.
-  6. Private hand UI and setup documentation (CDM-04): three slots, selection/targets, informational deck view; commit/child PR identity pending.
-  7. Integrated host/client verification (CDM-05): smoke test and recorded evidence; commit/child PR identity pending.
-- Feature-branch-chain remote tracker/child PRs have not been created. Push, PR creation, and other remote operations remain unauthorized; do not perform them without explicit permission.
-- Git boundary: implementation checkout is C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git on feat/card-deck-mechanic; source snapshot NavalComander remains outside Git. Local commits are possible on this branch. Push is not authorized and remote write access is unknown; do not push.
-
+- Test framework/runner: Unity Test Framework 1.6.0, Unity 6000.3.17f1 Editor Test Runner EditMode, assembly `NavalCommander.CardMechanics.Tests`.
+- Code location: feature C# under `Assets/Scripts`; focused EditMode tests under `Assets/Scripts/CardMechanics/Tests/` in the Editor-only test assembly.
+- Historical evidence: catalog tests and deck tests passed; the eight `PlayerCardDeckTests` remain the applicable deck behavior coverage. The coordinator's 6/6 RED→GREEN and bridge/presentation compile/review records below document superseded work only, not active acceptance.
+- Delivery now tracks the card catalog/deck, deterministic effect-domain work, and a one-player `GameScene` playtest. Earlier feature-branch-chain / PR boundary plans apply only to the old multiplayer scope and are superseded. Push and PR creation remain unauthorized.
+- Git boundary: local checkout is `C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git` on `feat/card-deck-mechanic`; no push or remote operation is authorized.
 ## Progress and Next Step
-- Requirements mapping: complete. Clone/branch, dependencies, package assets, test package, and documented runner path are reconciled. Pivot-based movement, hidden-ship blocking, forward-point projectile origin, ship-relative movement/aim directions, blocked movement/rotation outcomes, one-cell movement distance, and board-boundary rules are confirmed.
-- Source implementation: CDM-01A catalog and CDM-01B deck/hand are committed and tested (8/8); CDM-02A coordinator was tested 6/6 in the open Unity Editor and its native review was approved/acknowledged at commit `061ff56`. CDM-02B bridge source/asmdef are authored locally and statically checked; no post-edit compile, bridge-specific test, or host/client smoke is observed. NGO bridge attachment/bootstrap, timeout, effects, and UI/GameScene behavior remain pending. No push occurred.
-- Play Mode target clarified by the user (2026-09-29): use `GameScene` itself as the gameplay map, place ships there, and fit the camera to the whole playable map; do not create a temporary sandbox. Darker map colors are deferred. The scene has no board/grid or ships yet; do not infer a logical cell count solely from the background sprite.
-- Next step: verify the bridge compiles in the already-open Editor (do not start a second Unity process), then wire a visible network object/bootstrap and hand UI into `GameScene` in a separately bounded slice; the project currently has no NetworkManager or NetworkObject in its scenes/prefabs. Timeout still needs its own RED. Host/client PlayMode smoke and real-time card testing remain pending.
-
+- Card foundation: CDM-01A catalog and CDM-01B per-player deck/hand are committed; the deck fixture previously reported 8/8 passed in Unity EditMode. Keep these domain sources, assets, tests, and runtime/test asmdefs.
+- Scope pivot (2026-09-29): the user requested removing the premature multiplayer implementation and focusing only on card creation/functionality. CDM-02 coordinator/NGO work, CDM-04 networked Host/Join/hand UI/installer, and CDM-05 multiplayer verification are superseded. Historical RED/GREEN, commit, compile, ILPP, and review evidence is retained in this document; it does not establish current functionality after cleanup.
+- Cleanup status: CDM-06 completed. Coordinator and its tests, Networking, Presentation, and installer changes to GameScene were removed; NGO package files, `Assets/DefaultNetworkPrefabs.asset`, project settings, and unrelated dirty files were preserved.
+- Remaining active work: domain card-effect resolution/tests, then a one-player hand/input playtest in `GameScene`. Three-Shot footprint and 90° rotation snap for two-cell ships remain open product questions; resolve before implementing dependent rules. The single-player gameplay layer (board/ship state, effect application, and hand/input presentation) is not yet present. Do not infer grid geometry from the sea sprite.
+- Next step: continue card-effect RED→GREEN→REFACTOR, resolving the open Three-Shot and two-cell rotation decisions first. Then implement the one-player `GameScene` playtest without modifying network infrastructure. Parent owns final inspection; this cleanup remains unstaged/uncommitted.
 ## Relevant Files
-- C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git — primary Git checkout and feature branch.
-- C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalComander — separate no-Git source snapshot used only for comparison.
-- `Packages/manifest.json` and `Packages/packages-lock.json` — reconciled direct/resolved package baseline in the implementation checkout.
-- `Assets/DefaultNetworkPrefabs.asset` — currently empty NGO prefab list; networking integration remains pending.
-- `Assets/Scripts/CardMechanics/CardDefinition.cs` and `NavalCommander.CardMechanics.asmdef` — static card data model and explicit runtime assembly.
-- `Assets/Scripts/CardMechanics/Networking/` — thin NGO bridge and adapter-only asmdef; it does not modify the pure domain assembly.
-- `Assets/Data/CardDefinitions/` — the 12 authored card ScriptableObject assets.
-- `Assets/Scripts/CardMechanics/Tests/` — Editor-only catalog and per-player deck/hand specifications.
-- `Assets/Scenes/GameScene.unity` — current scene baseline.
-- `ProjectSettings/ProjectVersion.txt` — Unity 6000.3.17f1.
-- Project GDD, pages 4–13 — turn phases, hidden selections, authority expectations; legacy draw rules superseded by current user decisions.
-
-
-
-
-
-
-
-
+- `Assets/Scripts/CardMechanics/CardDefinition.cs` and `NavalCommander.CardMechanics.asmdef` — retained card data model and runtime domain assembly.
+- `Assets/Scripts/CardMechanics/PlayerCardDeck.cs` — retained per-player deterministic deck/hand rules.
+- `Assets/Data/CardDefinitions/` — retained set of 12 authored card ScriptableObject assets.
+- `Assets/Scripts/CardMechanics/Tests/` — retained Editor-only catalog and deck/hand tests.
+- `Assets/Scenes/GameScene.unity` — restore to `HEAD` during CDM-06; existing sea visual is the map for the eventual single-player playtest.
+- `Packages/manifest.json`, `Packages/packages-lock.json`, and `Assets/DefaultNetworkPrefabs.asset` — preserve; NGO-related provenance predates this feature and is ambiguous.
+- Historical removed paths: `Assets/Scripts/CardMechanics/TurnSubmissionCoordinator.cs`, `Tests/TurnSubmissionCoordinatorTests.cs`, `Networking/`, and `Presentation/`.
+- Project GDD, pages 4–13 — source for confirmed card/turn rules; unresolved Three-Shot footprint and two-cell 90° snap remain open.

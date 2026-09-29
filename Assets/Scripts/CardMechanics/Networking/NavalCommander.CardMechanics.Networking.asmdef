@@ -1,8 +1,0 @@
-{
-  "name": "NavalCommander.CardMechanics.Networking",
-  "rootNamespace": "NavalCommander.CardMechanics.Networking",
-  "references": [
-    "NavalCommander.CardMechanics",
-    "Unity.Netcode.Runtime"
-  ]
-}
