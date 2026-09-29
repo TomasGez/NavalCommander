@@ -1,7 +1,7 @@
 # Card and Deck Mechanic — Authoritative Multiplayer
 
 ## Objective
-Implement only the card/deck mechanic for NavalComander in Unity 6.3, including per-player decks, turn-based hand management, card effects, authoritative multiplayer handling, and the sketch-inspired hand UI.
+Implement only the card/deck mechanic for NavalComander in Unity 6.3, including per-player decks, turn-based hand management, card effects, authoritative multiplayer handling, and the sketch-inspired hand UI integrated directly into `GameScene`.
 
 ## Problem and Why
 The project has no gameplay/card system yet. The user wants the 12-card mechanic implemented cleanly, with static card definitions in ScriptableObjects, focused scripts (no God Script), and server authority so opponents cannot inspect each other's hand or hidden choices. The original no-Git Unity folder is only a source snapshot; implementation will use the newly cloned Git checkout after reconciling verified project differences.
@@ -16,10 +16,12 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 - ProjectSettings/ProjectSettings.asset differs in product and Unity Cloud metadata; do not copy it between trees.
 - Clone used public HTTPS without credentials; no push has occurred and remote write access is unverified.
 - The checkout already contains unrelated local Unity/project setup changes and untracked Unity Skills files. Preserve them and stage only card-feature paths for work-unit commits.
+- User code-location preference (2026-09-28): keep all feature C# files under `Assets/Scripts`; place test scripts in `Assets/Scripts/CardMechanics/Tests/` behind a nested Editor-only test asmdef so they do not enter the runtime assembly or player build.
 
 ## Authorized Scope
 - In-match deck, hand, action selection/submission, action resolution, card effects, and minimal host/client wiring needed to exercise the mechanic.
 - UI for the map area, a decorative deck indicator (not a draw button), and three private hand slots; at most two selected cards.
+- Use the existing `GameScene` board/sea visual as the gameplay map, place ships in that scene, and frame the complete playable map with its camera. Do not create a throwaway sandbox scene. Map color changes are deferred.
 - No lobby, matchmaking, progression, full ship-placement flow, or online service setup in this feature.
 
 ## Accepted Requirements and Constraints
@@ -43,6 +45,7 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 - Server resolves submitted actions only after all active players confirm or the configured turn timeout is reached; secret choices and private hand/deck state are not broadcast to other players.
 - Resolution follows the agreed phases and card values. Defense lasts through the current turn, covers the one occupied ship cell chosen by its owner, and is consumed by its first incoming attack; Mirror returns that attack toward its origin. Missile/Torpedo use direction-only targeting and launch from the ship's forward point; they can travel as far as the board edge, are stopped by walls/obstacles, damage only the first ship encountered, and are destroyed on ship impact. For a spawned NGO projectile, destruction is server-authoritative through `NetworkObject.Despawn()`. A blocked movement or rotation does not execute, leaves its card in hand, and still counts as one of the two card uses for that turn. Rotation validity checks the ship's full final occupied footprint against walls, obstacles, other ships, and the playable board boundary; no part of the ship may end outside the board. Other invalid-action outcomes remain unresolved and must not be invented.
 - Hand UI shows exactly 3 private slots, supports selection of up to 2 cards, lets the player choose one occupied ship cell for Shield/Mirror and a travel direction for Missile/Torpedo, and presents the deck as informational only.
+- Play Mode integration uses `GameScene` and its existing map visual; ships are visible on that map and the Game Camera frames the entire playable area. Color/lighting restyling is explicitly deferred.
 - Focused automated tests cover deck seeding/refill/reuse/limits, server-side submission/privacy/resolution, and damage/effect rules; multiplayer smoke test verifies host plus at least one client.
 
 ## Checklist
@@ -77,20 +80,33 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 - [x] Add an Editor-only Test Framework assembly (`TestAssemblies`) and run the initial catalog-count specification to RED before defining card assets.
 - [x] Extend the catalog specifications for all 12 canonical names, their Defense/Movement/Attack categories, and the three confirmed damage values; observe RED before defining card assets.
 - [x] Define immutable authored card data and create exactly 12 ScriptableObject assets.
+- [ ] Restore the deleted runtime `CardDefinition` script and runtime asmdef from the existing catalog commit; move catalog tests into `Assets/Scripts/CardMechanics/Tests/` under their own Editor-only asmdef. Reopened because the user's current checkout has deleted the previously committed model/asmdef and moved test sources beside the runtime assembly.
+- Structural repair progress (2026-09-28): Restored `CardDefinition.cs`, its original `.meta`, `NavalCommander.CardMechanics.asmdef` and its original `.meta`; moved the catalog/deck test sources and Editor-only test asmdef into `Assets/Scripts/CardMechanics/Tests/`, preserving existing test GUIDs and adding the folder meta; added the explicit `NavalCommander.CardMechanics` namespace import to `PlayerCardDeckTests.cs`. No deck production behavior was added. Compilation is still unverified.
 - Route: delegated direct; the writer trigger applies because this touches runtime data code, assembly definitions, authored assets, and tests.
 - Trigger evidence: the work spans multiple non-trivial files, so the parent delegates one bounded writer after recording the expanded RED.
 - Acceptance: exactly one asset for every agreed card; serialized category and attack damage values match the accepted rules. Tests that reference gameplay types must use an explicit runtime assembly because custom asmdefs cannot reference predefined `Assembly-CSharp`.
 - TDD evidence: the first filtered EditMode run compiled and failed the exact-12 catalog test: expected 12 `CardDefinition` assets, found 0 (1 total, 0 passed, 1 failed; XML `%TEMP%/NavalCommander-CardCatalog-RED.xml`, log `%TEMP%/NavalCommander-CardCatalog-RED.log`). After extending the specification, a second filtered run compiled all three tests and observed RED: 3 total, 0 passed, 3 failed. The tests reported 0 assets, then missing `Missile`/`Shield` definitions; XML `%TEMP%/NavalCommander-CardCatalog-Rules-RED.xml`, log `%TEMP%/NavalCommander-CardCatalog-Rules-RED.log`.
 - Verification note: the first import attempt after authoring assets was blocked by invalid hand-written `.meta` YAML (Unity reported `Shield.asset.meta` parser failure at line 8 and invalid folder/asset GUID metadata); it emitted no test result XML, so this was not a card assertion result. All 17 new sidecars were corrected to Unity's valid importer format, preserving GUIDs. The final import/test run reported no metadata parse errors.
 - Verification command: `& 'C:/Program Files/Unity/Hub/Editor/6000.3.17f1/Editor/Unity.exe' -batchmode -projectPath 'C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git' -runTests -testPlatform EditMode -assemblyNames 'NavalCommander.CardMechanics.Tests' -testFilter 'NavalCommander.CardMechanics.Tests.CardDefinitionCatalogTests' -testResults "$env:TEMP/NavalCommander-CardCatalog-Rules-GREEN-AfterMetaFix.xml" -logFile "$env:TEMP/NavalCommander-CardCatalog-Rules-GREEN-AfterMetaFix.log"`. Result: passed all 3 tests (3 total, 3 passed, 0 failed); XML at `%TEMP%/NavalCommander-CardCatalog-Rules-GREEN-AfterMetaFix.xml`, log at `%TEMP%/NavalCommander-CardCatalog-Rules-GREEN-AfterMetaFix.log`. Structural inspection confirmed exactly 12 unique asset names and IDs, all asset script references target `CardDefinition.cs`, categories match Defense/Movement/Attack, and attack damage values are Missile 30, Torpedo 50, Three-Shot 40 per hit cell.
+- Current console regression: the pre-fix Editor.log for this clone contained three unique CS0246 errors at the old `Assets/Scripts/CardMechanics/PlayerCardDeckTests.cs` path, lines 188, 210, and 225. They were caused by deleted `CardDefinition.cs`, its meta, and `NavalCommander.CardMechanics.asmdef` plus meta, with the test asmdef beside runtime code. Structural repair is applied; the available Editor.log has no post-fix compile result (last write predates the repair), so clearing the current Unity Console is pending verification after the project lock is released.
 - Runtime harness: N/A for this slice because it only authors card metadata/assets; no runtime gameplay behavior is implemented yet.
-- Rollback boundary: remove `Assets/Scripts/CardMechanics/` and its folder meta, `Assets/Data/CardDefinitions/` and their folder metas, and `Assets/Tests/CardMechanics/` plus its folder metas; revert only this task's tracker section. Preserve all unrelated local project/setup changes.
-- Work-unit commit: pending local commit on `feat/card-deck-mechanic`; RDD assessment pending.
+- Rollback boundary: remove `Assets/Scripts/CardMechanics/` and its folder meta, `Assets/Data/CardDefinitions/` and their folder metas; tests for this feature now belong under `Assets/Scripts/CardMechanics/Tests/`. Revert only this task's tracker section and preserve all unrelated local project/setup changes.
+- Work-unit commit: `3a083b9d2ba147b9ae75c37f931ee79e6996a334` (`feat(card-mechanic): add the authored card catalog`) on `feat/card-deck-mechanic`.
+- RDD assessment: medium risk, `review_due=true` because `slice_budget_reached` (641 changed lines as assessed by the native tool). Untracked scope was explicitly excluded with inventory `sha256:caa9aa3211b415c0cc7e99386231526e8ae0d601962be953915f2d7f8e2e5362`; unrelated local files were not included. The user authorized this review, and native `review.start` created lineage `review-cc25fb31d2890eee` in `reviewing` state with the `review-reliability` lens required. Its exact next `review.status` transition failed before native execution with `operation_timeout`, `mutation_outcome=not_started`, `retry_safe=false`, `replayability=manual_action_required`, and `next_action=stop`. No review findings or acknowledgment were produced; do not retry or advance the reviewed boundary, which remains `8cf6fc36066442f023578227753ec127cf56a731`.
 - Runner scope note: `Packages/manifest.json` includes the Unity-Skills package in `testables`; use Unity 6.3 `-assemblyNames NavalCommander.CardMechanics.Tests` and `-testFilter NavalCommander.CardMechanics.Tests.CardDefinitionCatalogTests` to avoid unrelated package tests.
 
 ### CDM-01B — Implement per-player deck and hand rules
-- [ ] Implement independently seeded per-player deck state, automatic empty-slot refill, a 3-card hand, max-2 selection, and return-to-owner behavior.
-- [ ] Add focused tests for the pure deck/hand rules and observe RED before implementation.
+- [x] Implement independently seeded per-player deck state, automatic empty-slot refill, a 3-card hand, max-2 selection, and return-to-owner behavior.
+- [x] Add focused tests for the pure deck/hand rules and observe RED before implementation.
+- Earlier test-run attempt (2026-09-28): `Assets/Scripts/CardMechanics/Tests/PlayerCardDeckTests.cs` contains eight focused behavior specifications. The filtered EditMode attempt produced **no test result**: Unity aborted batch mode because another Unity instance had `NavalCommander-git` open and reported `attempt to write a readonly database` twice. The command exited 0 despite the fatal abort; this was not RED/GREEN evidence. Requested results were `%TEMP%/NavalCommander-PlayerDeck-RED.xml` and `%TEMP%/NavalCommander-PlayerDeck-RED.log`.
+- Test run attempt (2026-09-29, after the user closed the Editor): Unity emitted `unable to open database file`, the LicenseClient IPC connection was refused, and the Package Manager could not connect to its local IPC stream after 30 seconds; Unity terminated with return code 1. No `%TEMP%/NavalCommander-PlayerDeck-RED.xml` was created. This is still **not** RED/GREEN; no deck test assertion ran. At that time this was an environment failure; the later Editor run below produced actual RED. No Library/cache state was altered.
+- TDD RED evidence (2026-09-29, user ran the Editor Test Runner): `NavalCommander.CardMechanics.Tests.PlayerCardDeckTests` reported 8 tests failed (the class contains 8 tests). This is the first actual RED; the prior CLI startup failures remain environment failures, not test evidence. Exact assertion messages were not captured. Current runtime source contains no `PlayerCardDeck` or `CardUseOutcome`; the tests specify those missing APIs and the deck/hand behavior.
+- Post-implementation test result (2026-09-29, user ran the Editor Test Runner): Unity wrote %LOCALAPPDATA%/MP Group/Naval Commander/TestResults.xml; exactly 1 test was selected and it failed: BeginTurn_FillsHandToThreeAndOffersNoDrawOrDiscardCommand. The stack trace points to PlayerCardDeckTests.cs:25: NUnit raised Property Count was not found because Has.Count was applied to LINQ's lazy Distinct() enumerable. The hand-count assertion passed; the uniqueness assertion was invalid test syntax, not a demonstrated runtime deck failure. Fixed the test to assert Distinct().Count() == 3; post-fix GREEN remains pending. Engram mirror synchronization is pending because the runtime session identity is unavailable; do not claim the mirror is current.
+- Partial GREEN evidence (2026-09-29, user follow-up): the user reported three passing tests. The current Unity result XML at 11:16:45 local shows the PlayerCardDeckTests fixture with eight discovered tests but only one executed; BeginTurn_FillsHandToThreeAndOffersNoDrawOrDiscardCommand passed (total 1, passed 1, failed 0). The other reported passes are not independently represented by the current XML. Do not mark CDM-01B GREEN until the entire eight-test fixture is run and recorded.
+- Focused GREEN evidence (2026-09-29, Unity Editor Test Runner, EditMode, PlayerCardDeckTests fixture): %LOCALAPPDATA%/MP Group/Naval Commander/TestResults.xml at 11:21:23 local recorded total 8, passed 8, failed 0, with all eight named test cases Passed. The already-open Editor ran this fixture; no second Editor or CLI process was launched.
+- Runtime harness for CDM-01B: N/A; this pure deck/hand state has no scene or MonoBehaviour entry point yet. Real-time GameScene interaction and host/client verification remain CDM-04/05. The full project EditMode suite was not run; it discovers hundreds of package tests outside this focused deck work unit.
+- CDM-01B rollback boundary: PlayerCardDeck.cs and its meta, PlayerCardDeckTests.cs and its meta, the test-assembly relocation to Assets/Scripts/CardMechanics/Tests, and this task evidence; rolling back the relocation must restore the previous Assets/Tests/CardMechanics path.
+- CDM-01B work-unit commit: pending; record the commit identity after creation. Engram mirror update remains pending until runtime session registration is restored.
 - Route: delegated direct; deck state and its behavior tests touch multiple non-trivial files.
 - Trigger evidence: multiple non-trivial state and test files are required, so implementation will be delegated after the writer observes the deck/hand RED.
 - Acceptance: a player's deck contains exactly one of each card; refill preserves unused cards and never introduces a draw/discard action; a maximum of two selections is enforced per turn; used cards return to the same owner's pool and blocked movements remain in hand while counting as a selection.
@@ -111,12 +127,13 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 
 ### CDM-04 — Build private hand UI
 - [ ] Add a focused UGUI hand presenter and three-slot layout based on the supplied sketch.
+- [ ] Integrate ship/map presentation into `GameScene` and adjust the Game Camera to keep the complete playable map in frame; preserve the existing map colors for this pass.
 - [ ] Show the deck as a non-interactive visual; allow selecting at most two cards and displaying selected state.
 - [ ] Let the player choose the defended occupied ship cell when selecting Shield or Mirror.
 - [ ] Let the player choose a ship-relative direction of travel for Missile and Torpedo; do not target an exact board cell.
 - [ ] Add concise setup/use documentation.
 - Route: delegated direct; UI, data binding, and setup span multiple non-trivial files.
-- Acceptance: UI never exposes other players' hands and has no draw/discard actions.
+- Acceptance: UI never exposes other players' hands and has no draw/discard actions; the user can exercise the mechanic from `GameScene` with the existing map visible and fully framed.
 
 ### CDM-05 — Verify multiplayer flow and close delivery
 - [ ] Run focused tests and applicable full Unity checks.
@@ -128,6 +145,7 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 ## Effective TDD, Runner, and Delivery
 - TDD mode: enabled; test-first (RED → GREEN → REFACTOR), explicitly selected by the user.
 - Test framework: Unity Test Framework 1.6.0 is present in the clone manifest/lockfile and PackageCache. The installed editor is `C:/Program Files/Unity/Hub/Editor/6000.3.17f1/Editor/Unity.exe`.
+- Code location: all feature C# files go under `Assets/Scripts`; EditMode tests live under `Assets/Scripts/CardMechanics/Tests/` in a nested Editor-only test assembly.
 - EditMode runner (PowerShell): `& 'C:/Program Files/Unity/Hub/Editor/6000.3.17f1/Editor/Unity.exe' -batchmode -projectPath 'C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git' -runTests -testPlatform EditMode -testResults "$env:TEMP/NavalCommander-EditMode.xml" -logFile "$env:TEMP/NavalCommander-EditMode.log"`. Unity's Test Framework command-line reference documents these arguments; `-quit` is not supported while tests are running. This invocation remains to be exercised after the test assembly/spec is added.
 - Test setup: the Editor-only card mechanic test assembly and catalog tests exist; expanded catalog tests were observed RED before defining cards and now pass after implementation. Tests that reference gameplay types use the explicit `NavalCommander.CardMechanics` runtime assembly because custom asmdefs cannot reference predefined `Assembly-CSharp`.
 - Delivery strategy: `ask-on-risk` (default); forecast is approximately 700 authored changed lines (exclude generated Unity files). The user selected `feature-branch-chain` on 2026-09-28 after the required ask-on-risk gate.
@@ -144,8 +162,9 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 
 ## Progress and Next Step
 - Requirements mapping: complete. Clone/branch, dependencies, package assets, test package, and documented runner path are reconciled. Pivot-based movement, hidden-ship blocking, forward-point projectile origin, ship-relative movement/aim directions, blocked movement/rotation outcomes, one-cell movement distance, and board-boundary rules are confirmed.
-- Source implementation: CDM-01A is complete locally: immutable `CardDefinition` ScriptableObject data and exactly 12 authored card assets are implemented and catalog-tested. Per-player deck/hand state, turn submission, effects, and UI are not implemented yet. No push occurred.
-- Next step: add focused pure deck/hand behavior tests and observe RED before implementing per-player deck state under CDM-01B.
+- Source implementation: CDM-01A had been committed and catalog-tested; its 12 assets remain authored, and its runtime model/assembly have been restored in the working tree. Both test sources and their Editor-only asmdef are nested under Assets/Scripts/CardMechanics/Tests/. CDM-01B deck/hand production code is present and Unity loaded the test assembly. The user-observed 8/8 RED preceded implementation. The latest Editor Test Runner result selected one test and exposed a bad NUnit assertion over a lazy LINQ enumerable (Has.Count on Distinct()), now corrected to Distinct().Count(); the corrected first deck test now passes (latest XML total 1, passed 1); the full eight-test fixture passed 8/8 in Unity on 2026-09-29; the CDM-01B work-unit commit is pending. Turn submission, effects, and UI behavior remain unimplemented. No push occurred.
+- Play Mode target clarified by the user (2026-09-29): use `GameScene` itself as the gameplay map, place ships there, and fit the camera to the whole playable map; do not create a temporary sandbox. Darker map colors are deferred. The scene has no board/grid or ships yet; do not infer a logical cell count solely from the background sprite.
+- Next step: commit the verified CDM-01B deck/hand work unit with its tests and tracker evidence, then continue to server-authoritative hidden turn submission (CDM-02). GameScene gameplay and host/client PlayMode verification remain later feature tasks.
 
 ## Relevant Files
 - C:/Users/tobia/OneDrive/Desktop/Tobias/Facultad/Multiplayer/NavalCommander-git — primary Git checkout and feature branch.
@@ -154,7 +173,7 @@ The project has no gameplay/card system yet. The user wants the 12-card mechanic
 - `Assets/DefaultNetworkPrefabs.asset` — currently empty NGO prefab list; networking integration remains pending.
 - `Assets/Scripts/CardMechanics/CardDefinition.cs` and `NavalCommander.CardMechanics.asmdef` — static card data model and explicit runtime assembly.
 - `Assets/Data/CardDefinitions/` — the 12 authored card ScriptableObject assets.
-- `Assets/Tests/CardMechanics/` — Editor-only catalog specifications for names, categories, and damage.
+- `Assets/Scripts/CardMechanics/Tests/` — Editor-only catalog and per-player deck/hand specifications.
 - `Assets/Scenes/GameScene.unity` — current scene baseline.
 - `ProjectSettings/ProjectVersion.txt` — Unity 6000.3.17f1.
 - Project GDD, pages 4–13 — turn phases, hidden selections, authority expectations; legacy draw rules superseded by current user decisions.
