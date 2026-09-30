@@ -30,13 +30,13 @@ namespace NavalCommander.CardMechanics
 
     public sealed class CardShipState
     {
-        internal CardShipState(string shipId, int x, int y, CardinalDirection facing)
+        internal CardShipState(string shipId, int x, int y, CardinalDirection facing, int initialHealth)
         {
             ShipId = shipId;
             X = x;
             Y = y;
             Facing = facing;
-            Health = 100;
+            Health = initialHealth;
         }
 
         public string ShipId { get; }
@@ -70,7 +70,7 @@ namespace NavalCommander.CardMechanics
         public int Width { get; }
         public int Height { get; }
 
-        public CardShipState AddShip(string shipId, int x, int y, CardinalDirection facing)
+        public CardShipState AddShip(string shipId, int x, int y, CardinalDirection facing, int initialHealth = 100)
         {
             if (string.IsNullOrWhiteSpace(shipId))
             {
@@ -80,6 +80,11 @@ namespace NavalCommander.CardMechanics
             if (!Enum.IsDefined(typeof(CardinalDirection), facing))
             {
                 throw new ArgumentOutOfRangeException(nameof(facing));
+            }
+
+            if (initialHealth <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(initialHealth));
             }
 
             if (!IsInBounds(x, y) || IsObstacle(x, y) || FindShipAt(x, y) != null)
@@ -92,7 +97,7 @@ namespace NavalCommander.CardMechanics
                 throw new ArgumentException("Ship IDs must be unique.", nameof(shipId));
             }
 
-            var ship = new CardShipState(shipId, x, y, facing);
+            var ship = new CardShipState(shipId, x, y, facing, initialHealth);
             _ships.Add(ship);
             return ship;
         }
