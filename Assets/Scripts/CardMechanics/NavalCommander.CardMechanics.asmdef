@@ -1,4 +1,8 @@
 {
   "name": "NavalCommander.CardMechanics",
-  "rootNamespace": "NavalCommander.CardMechanics"
+  "rootNamespace": "NavalCommander.CardMechanics",
+  "references": [
+    "UnityEngine.UI",
+    "Unity.InputSystem"
+  ]
 }
