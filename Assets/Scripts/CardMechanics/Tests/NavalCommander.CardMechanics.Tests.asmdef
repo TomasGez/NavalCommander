@@ -1,0 +1,12 @@
+{
+  "name": "NavalCommander.CardMechanics.Tests",
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "references": [
+    "NavalCommander.CardMechanics"
+  ]
+}
