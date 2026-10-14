@@ -69,7 +69,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7896535803319591691}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a87edd578dc230f449ef42d48c02b85b, type: 3}
+  m_Script: {fileID: 11500000, guid: 7888860e711643b4ea67432be66a1043, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NavalCommander.Networking.PlayerNet
   ShowTopMostFoldoutHeaderGroup: 1
