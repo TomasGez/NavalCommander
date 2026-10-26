@@ -35,6 +35,39 @@ Presentation  -> Networking -> Gameplay -> CardMechanics
 - `Gameplay/`: `MatchRules` y `TurnTracer`, reglas sin Netcode (se pueden probar solas).
 - `CardMechanics/`: cartas, mazo y `CardEffectResolver`.
 
+## Scripts por grupo
+
+**Conexión y sala** (`Networking/Connection`, `Networking/Services`)
+- `SessionService`: envuelve Authentication, Lobby/Sessions y Relay; crea, busca y une sesiones.
+- `LobbyView`: pantalla provisional del lobby (crear, unirse por código, buscar partida).
+- `LobbyFlow`: en el servidor, cuenta atrás y carga de `GameScene` cuando hay jugadores suficientes.
+- `ConnectionGate`: aprueba o rechaza conexiones (sala llena o partida ya empezada).
+- `NetworkLauncher`: ruta de desarrollo por IP directa (Host, Client, servidor dedicado).
+
+**Partida en red** (`Networking/Match`)
+- `MatchController`: autoridad de la partida; fases, temporizador, jugadas recibidas y resolución del turno.
+- `PlayerNet`: un objeto por jugador; asigna el `Slot`, recibe su mano privada y envía sus jugadas.
+
+**Datos compartidos** (`Networking/Shared`)
+- `PlayDto`, `ResolutionDto`, `HitDto`, `ShipSnapshot`: estructuras serializables que viajan entre servidor y clientes.
+- `MatchPhase`, `SessionSettings`: fases de la partida y constantes de la sala.
+- `MatchEvents`: eventos locales que desacoplan la interfaz de los mensajes de red.
+
+**Reglas de juego sin red** (`Gameplay`)
+- `MatchRules`: reparte manos, valida y arma los comandos, resuelve turnos y decide el ganador.
+- `TurnTracer`: reconstruye el detalle de cada carta (celdas objetivo, impactos, daño) para poder animarlo, porque el resolver solo devuelve el resultado final.
+
+**Interfaz y feedback visual** (`Presentation`)
+- `MatchHud`: fase, temporizador, mano, botón de confirmar y mensajes de fin de partida o error.
+- `BoardView`, `BoardLayout`, `ShipView`: dibujan el tablero y los barcos desde el estado replicado.
+- `TurnEffectsView`: muestra el feedback visual de cada turno (proyectiles, impactos, daño flotante, escudos, espejos, movimientos y hundimientos).
+- `Primitives2D`: formas 2D simples que usan las vistas, sin prefabs.
+
+**Cartas y mapas** (`CardMechanics`, `Maps`; zona compartida, no se modifican desde la capa de red)
+- `CardDefinition`, `PlayerCardDeck`, `CardEffectResolver`: datos, mazo y reglas de efectos de las cartas.
+- `LocalCardPlaytestPresenter`, `LocalCardUiInstaller`: sandbox local de cartas, fuera del flujo multijugador.
+- `MapRender`, `_map01`, `_map02`: dibujo y datos de los mapas.
+
 ## Flujo
 
 `LobbyScene` (`LobbyView` -> `SessionService` o `NetworkLauncher`) -> se conecta y nace un `PlayerNet` por jugador
@@ -76,3 +109,13 @@ Los RPC usan el atributo `[Rpc]` de Netcode 2.x con `InvokePermission` explícit
 - El mapa es fijo (`_map01`); su selección queda pendiente de otro integrante.
 - El sandbox local de CardMechanics y `GameSceneTesting` no usan red.
 - Las pruebas unitarias están en `Assets/Scripts/CardMechanics/Tests` (EditMode y PlayMode); la capa de red no tiene pruebas.
+
+## Deuda técnica conocida
+
+- Estado estático global: `MatchController.Instance` y `PlayerNet.All` (lista pública mutable que nunca se reinicia).
+- Eventos duplicados en `MatchEvents`: `TurnResolved` y `TurnResolvedDetailed`.
+- Caída del host sin manejar: los clientes solo ven "Sin conexión" en el HUD y no vuelven al lobby.
+- La sesión del Lobby no se bloquea al empezar la partida; los que entran tarde son rechazados recién por `ConnectionGate`.
+- `SessionService` no hace `Detach` de la sesión cuando falla la creación o unión, y puede dejar el manejador registrado.
+- El flag `movementOnly` es de prueba y sigue en código de producción (`MatchController` y `MatchRules`).
+- Sobran `Debug.Log` (`BoardView`, `SessionService`, `NetworkLauncher`) y quedan textos de interfaz con voseo regional.
