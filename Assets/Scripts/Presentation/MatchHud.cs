@@ -11,12 +11,14 @@ namespace NavalCommander.Presentation
 {
     /// <summary>
     /// Responsabilidad única: la interfaz del jugador durante la partida (OnGUI provisional):
-    /// fase, temporizador, mano de cartas, confirmar y resultado. Lee el estado replicado y envía
-    /// las jugadas a través de PlayerNet; no contiene reglas ni dibuja el tablero.
+    /// fase, temporizador, mano de cartas, confirmar y resultado. Lee el estado replicado de MatchController
+    /// y envía las jugadas a través de PlayerNet.SubmitPlaysRpc; no contiene reglas ni dibuja el tablero
+    /// (eso es BoardView). Corre en los clientes y en el host; recibe la mano y el informe del turno
+    /// mediante MatchEvents. Al salir cierra la sesión (SessionService) y vuelve a la LobbyScene.
     /// </summary>
     public class MatchHud : MonoBehaviour
     {
-        [SerializeField] private string lobbySceneName = "Lobby";
+        [SerializeField] private string lobbySceneName = "LobbyScene";
 
         private string[] _hand = Array.Empty<string>();
         private readonly List<string> _selectedCards = new List<string>();
@@ -59,7 +61,7 @@ namespace NavalCommander.Presentation
             if (!manager.IsListening)
             {
                 GUILayout.Label("Sin conexión. La conexión se hace en la escena Lobby.");
-                if (GUILayout.Button("Ir al Lobby")) SceneManager.LoadScene(lobbySceneName);
+                if (GUILayout.Button("Ir al Lobby")) GoToLobby();
             }
             else DrawMatch(manager);
             GUILayout.EndArea();
@@ -78,7 +80,10 @@ namespace NavalCommander.Presentation
             if (match.Phase.Value == MatchPhase.Lobby) GUILayout.Label("Preparando la partida...");
             if (match.Phase.Value == MatchPhase.Selecting) DrawSelection(manager, match, me);
             if (match.Phase.Value == MatchPhase.Finished)
-                GUILayout.Label(match.WinnerSlot.Value >= 0 ? $"¡Ganó el slot {match.WinnerSlot.Value}!" : "Empate / sin ganador");
+            {
+                if (match.FailureMessage.Value.Length > 0) GUILayout.Label($"La partida terminó con un error: {match.FailureMessage.Value}");
+                else GUILayout.Label(match.WinnerSlot.Value >= 0 ? $"¡Ganó el slot {match.WinnerSlot.Value}!" : "Empate / sin ganador");
+            }
 
             for (int i = 0; i < match.Ships.Count; i++)
             {
@@ -88,11 +93,23 @@ namespace NavalCommander.Presentation
 
             if (!string.IsNullOrEmpty(_lastTurnLog)) GUILayout.Label("Último turno:\n" + _lastTurnLog);
 
-            if (GUILayout.Button("Desconectar y volver al Lobby"))
-            {
-                manager.Shutdown();
-                SceneManager.LoadScene(lobbySceneName);
-            }
+            if (GUILayout.Button("Salir y volver al Lobby")) LeaveToLobby(manager);
+        }
+
+        // Sin conexión (por ejemplo, el host cerró la partida): se cierra la sesión que pudo quedar colgada.
+        private async void GoToLobby()
+        {
+            var sessions = SessionService.ExistingInstance;
+            if (sessions != null && sessions.Current != null) await sessions.LeaveAsync();
+            SceneManager.LoadScene(lobbySceneName);
+        }
+
+        private async void LeaveToLobby(NetworkManager manager)
+        {
+            var sessions = SessionService.ExistingInstance;
+            if (sessions != null && sessions.Current != null) await sessions.LeaveAsync(); // cierra también Relay y Lobby
+            else manager.Shutdown();
+            SceneManager.LoadScene(lobbySceneName);
         }
 
         private void DrawSelection(NetworkManager manager, MatchController match, PlayerNet me)
@@ -123,7 +140,7 @@ namespace NavalCommander.Presentation
             var plays = new PlayDto[_selectedCards.Count];
             for (int i = 0; i < plays.Length; i++)
                 plays[i] = new PlayDto { CardId = new FixedString32Bytes(_selectedCards[i]), Aim = _aim };
-            me.SubmitPlaysServerRpc(plays);
+            me.SubmitPlaysRpc(plays);
         }
     }
 }

@@ -1,11 +1,12 @@
 namespace NavalCommander.Networking
 {
-    /// <summary>Parámetros de la sesión compartidos entre el Lobby y los sistemas de red.</summary>
+    /// <summary>
+    /// Constantes de la sesión. La cantidad de jugadores requeridos de cada partida NO vive acá:
+    /// es configuración de LobbyFlow y se pasa de forma explícita a quien la necesite.
+    /// </summary>
     public static class SessionSettings
     {
+        public const int MinPlayers = 2;
         public const int MaxPlayers = 4;
-
-        /// <summary>Jugadores necesarios para empezar (2 o 4). Lo configura el Lobby.</summary>
-        public static int RequiredPlayers = 2;
     }
 }

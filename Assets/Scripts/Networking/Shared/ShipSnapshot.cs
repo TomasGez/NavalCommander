@@ -3,7 +3,10 @@ using Unity.Netcode;
 
 namespace NavalCommander.Networking
 {
-    /// <summary>Estado de un barco tal como lo ven todos los clientes (se guarda en una NetworkList).</summary>
+    /// <summary>
+    /// Estado de un barco tal como lo ven todos los clientes (se guarda en MatchController.Ships, una NetworkList).
+    /// Solo el servidor la escribe (MatchController.PublishShips); los clientes únicamente la leen.
+    /// </summary>
     public struct ShipSnapshot : INetworkSerializable, IEquatable<ShipSnapshot>
     {
         public int Slot;

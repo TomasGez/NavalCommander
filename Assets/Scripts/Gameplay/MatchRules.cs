@@ -30,10 +30,11 @@ namespace NavalCommander.Gameplay
         public readonly int Slot;
         public readonly string CardId;
         public readonly int Phase, Outcome;
+        public readonly ResolutionDetail Detail; // celdas, impactos y posiciones para mostrar la carta (puede ser null)
 
-        public ResolutionInfo(int slot, string cardId, int phase, int outcome)
+        public ResolutionInfo(int slot, string cardId, int phase, int outcome, ResolutionDetail detail = null)
         {
-            Slot = slot; CardId = cardId; Phase = phase; Outcome = outcome;
+            Slot = slot; CardId = cardId; Phase = phase; Outcome = outcome; Detail = detail;
         }
     }
 
@@ -41,6 +42,9 @@ namespace NavalCommander.Gameplay
     /// REGLAS de la partida, sin ninguna dependencia de red: arma el tablero, reparte manos,
     /// valida jugadas, resuelve turnos y decide el ganador. Al no usar Netcode se puede probar solo
     /// y funciona igual en un host o en un servidor dedicado.
+    /// Solo la instancia del servidor la crea y la usa: MatchController la llama en cada paso del turno
+    /// y traduce sus resultados (ShipStatus, ResolutionInfo) a los DTO de red. Delega el cálculo de
+    /// efectos en CardEffectResolver / PlayerCardDeck (CardMechanics) y el detalle visual en TurnTracer.
     /// </summary>
     public sealed class MatchRules
     {
@@ -49,6 +53,7 @@ namespace NavalCommander.Gameplay
 
         private readonly CardDefinition[] _catalog;
         private readonly CardEffectResolver _resolver;
+        private readonly Dictionary<string, CardDefinition> _byId = new Dictionary<string, CardDefinition>();
         private readonly bool _movementOnly;
         private readonly int _maxPlaysPerTurn;
         private readonly string[] _movementHand;
@@ -56,6 +61,7 @@ namespace NavalCommander.Gameplay
         private readonly Dictionary<int, PlayerCardDeck> _decks = new Dictionary<int, PlayerCardDeck>();
         private readonly HashSet<int> _forfeited = new HashSet<int>();
         private CardBoardState _board;
+        private TurnTracer _tracer;
 
         public MatchRules(CardDefinition[] catalog, bool movementOnly, int maxPlaysPerTurn)
         {
@@ -65,6 +71,7 @@ namespace NavalCommander.Gameplay
             _resolver = new CardEffectResolver(catalog);
 
             var names = new List<string>();
+            foreach (var card in catalog) _byId[card.CardId] = card;
             foreach (var card in catalog)
                 if (card.Category == CardCategory.Movement) { names.Add(card.CardId); _movementIds.Add(card.CardId); }
             names.Sort(StringComparer.Ordinal);
@@ -78,6 +85,7 @@ namespace NavalCommander.Gameplay
         {
             int height = cells.GetLength(0), width = cells.GetLength(1);
             _board = new CardBoardState(width, height);
+            _tracer = new TurnTracer(_catalog, _resolver, cells);
 
             for (int y = 0; y < height; y++)
                 for (int x = 0; x < width; x++)
@@ -163,6 +171,7 @@ namespace NavalCommander.Gameplay
             foreach (var play in plays)
             {
                 if (!seen.Add(play.CardId)) continue; // no repetir la misma carta
+                if (NeedsAim(play.CardId) && (play.Aim < 0 || play.Aim > 3)) continue; // sin dirección el resolver rechazaría todo el turno
 
                 if (_movementOnly)
                 {
@@ -178,21 +187,43 @@ namespace NavalCommander.Gameplay
             return commands;
         }
 
+        private bool NeedsAim(string cardId) =>
+            _byId.TryGetValue(cardId, out var card) && card.Category == CardCategory.Attack && cardId != "attack_three_shot";
+
         /// <summary>Resuelve todas las jugadas del turno (Defensa -> Movimiento -> Ataque) y devuelve el informe.</summary>
         public List<ResolutionInfo> ResolveTurn(List<CardPlayCommand> commands)
         {
             var report = new List<ResolutionInfo>();
+            List<ResolutionDetail> details = TryTrace(commands); // antes de resolver: necesita el tablero previo
             CardTurnResult result = _resolver.ResolveTurn(_board, commands);
 
-            foreach (var resolution in result.Resolutions)
+            for (int i = 0; i < result.Resolutions.Count; i++)
             {
+                var resolution = result.Resolutions[i];
+                ResolutionDetail detail = details != null && i < details.Count && details[i].CardId == resolution.CardId ? details[i] : null;
                 int slot = SlotOf(resolution.ShipId);
                 if (!_movementOnly && _decks.TryGetValue(slot, out var deck))
                     deck.ResolveSelectedCard(resolution.CardId, resolution.Outcome);
 
-                report.Add(new ResolutionInfo(slot, resolution.CardId, (int)resolution.Phase, (int)resolution.Outcome));
+                report.Add(new ResolutionInfo(slot, resolution.CardId, (int)resolution.Phase, (int)resolution.Outcome, detail));
             }
             return report;
+        }
+
+        // El detalle es solo visual: si falla, el turno se resuelve igual y solo se pierde la animación.
+        private List<ResolutionDetail> TryTrace(List<CardPlayCommand> commands)
+        {
+            try
+            {
+                var shipIds = new List<string>();
+                foreach (int slot in _decks.Keys) shipIds.Add(ShipId(slot));
+                return _tracer.Trace(_board, shipIds, commands);
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogWarning($"No se pudo detallar el turno para la animación: {e.Message}");
+                return null;
+            }
         }
 
         private static string ShipId(int slot) => "P" + slot;

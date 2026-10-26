@@ -7,7 +7,10 @@ namespace NavalCommander.Presentation
 {
     /// <summary>
     /// Responsabilidad única: dibujar el estado REPLICADO del tablero (marco, obstáculos, barcos).
-    /// Solo lee: nunca modifica el estado de la partida. Corre en todos los clientes.
+    /// Solo lee: nunca modifica el estado de la partida. Corre en todos los clientes (y en el host);
+    /// en un servidor dedicado (modo batch) no dibuja nada.
+    /// Cada frame toma MatchController.Ships (NetworkList replicada) y actualiza los barcos; el mapa es
+    /// el mismo _map01 que usa el servidor. Crea TurnEffectsView para las animaciones del turno.
     /// </summary>
     [RequireComponent(typeof(BoardLayout))]
     public class BoardView : MonoBehaviour
@@ -33,7 +36,22 @@ namespace NavalCommander.Presentation
         private readonly Dictionary<int, GameObject> _markers = new Dictionary<int, GameObject>();
         private readonly List<GameObject> _staticObjects = new List<GameObject>(); // marco y obstáculos
 
-        private void Awake() { _layout = GetComponent<BoardLayout>(); }
+        private TurnEffectsView _effects;
+
+        private void Awake()
+        {
+            _layout = GetComponent<BoardLayout>();
+            // Los efectos del turno se crean solos (la escena no necesita un componente extra).
+            _effects = GetComponent<TurnEffectsView>();
+            if (_effects == null && !Application.isBatchMode) _effects = gameObject.AddComponent<TurnEffectsView>();
+        }
+
+        /// <summary>Color del barco de ese slot (el propio se ve distinto).</summary>
+        public Color ColorOf(int slot)
+        {
+            PlayerNet me = PlayerNet.Local;
+            return me != null && me.Slot.Value == slot ? myColor : enemyColors[slot % enemyColors.Length];
+        }
 
         private void Update()
         {
@@ -56,14 +74,14 @@ namespace NavalCommander.Presentation
             int height = cells.GetLength(0), width = cells.GetLength(1);
             EnsureStaticBoard(cells, width, height);
 
-            PlayerNet me = PlayerNet.Local;
             for (int i = 0; i < match.Ships.Count; i++)
             {
                 ShipSnapshot snapshot = match.Ships[i];
-                bool alive = snapshot.Health > 0;
-                bool isMine = me != null && me.Slot.Value == snapshot.Slot;
-                Color color = isMine ? myColor : enemyColors[snapshot.Slot % enemyColors.Length];
+                // Un barco hundido sigue visible hasta que el proyectil lo alcanza; se desliza al moverse y vibra al ser golpeado.
+                bool alive = snapshot.Health > 0 || (_effects != null && _effects.KeepsShipVisible(snapshot.Slot));
+                Color color = ColorOf(snapshot.Slot);
                 Vector3 cellCenter = _layout.CellToWorld(snapshot.X, snapshot.Y, width, height);
+                if (_effects != null) cellCenter += _effects.ShipOffset(snapshot.Slot);
 
                 ShipView ship = GetOrCreateShip(snapshot.Slot);
                 ship.SetBodyColor(color);

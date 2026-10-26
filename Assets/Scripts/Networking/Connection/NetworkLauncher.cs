@@ -8,16 +8,22 @@ using UnityEngine;
 namespace NavalCommander.Networking
 {
     /// <summary>
-    /// Responsabilidad única: iniciar y cortar la conexión (Host, Client o Servidor dedicado)
-    /// y explicar qué pasa (estado, errores, motivo de desconexión).
+    /// Ruta de DESARROLLO por IP directa (UnityTransport sin servicios de Unity): inicia y corta la conexión
+    /// como Host, Client o Servidor dedicado, y explica qué pasa (estado, errores, motivo de desconexión).
+    /// La ruta principal del juego es SessionService (Authentication + Lobby + Relay); este componente
+    /// se usa para probar en LAN/local o con un servidor dedicado, desde el modo desarrollo de LobbyView.
+    /// También ofrece FindConfigurationError, que SessionService reutiliza para validar el NetworkManager.
     /// En un build de servidor dedicado (UNITY_SERVER) arranca solo, leyendo -port y -players.
+    /// Vive en la LobbyScene y corre en todas las instancias.
     /// </summary>
+    [RequireComponent(typeof(LobbyFlow))]
     public class NetworkLauncher : MonoBehaviour
     {
         [SerializeField] private string ip = "127.0.0.1";
         [SerializeField] private ushort port = 7777;
 
         private NetworkManager _manager;
+        private LobbyFlow _flow;
 
         public string Ip { get => ip; set => ip = value; }
         public ushort Port => port;
@@ -27,6 +33,7 @@ namespace NavalCommander.Networking
         private void Start()
         {
             LocalIps = ReadLocalIps();
+            _flow = GetComponent<LobbyFlow>();
             _manager = NetworkManager.Singleton;
             if (_manager != null)
             {
@@ -74,7 +81,7 @@ namespace NavalCommander.Networking
             Status = _manager.StartServer()
                 ? $"Servidor dedicado escuchando en el puerto {port}"
                 : "No se pudo iniciar el servidor";
-            Debug.Log($"[Server] {Status}, esperando {SessionSettings.RequiredPlayers} jugadores");
+            Debug.Log($"[Server] {Status}, esperando {_flow.RequiredPlayers} jugadores");
         }
 
         public void Disconnect()
@@ -89,7 +96,7 @@ namespace NavalCommander.Networking
         {
             transport = null;
             _manager = NetworkManager.Singleton;
-            string error = Validate(_manager);
+            string error = FindConfigurationError(_manager);
             if (error != null)
             {
                 Status = "ERROR: " + error;
@@ -102,7 +109,8 @@ namespace NavalCommander.Networking
             return true;
         }
 
-        private static string Validate(NetworkManager manager)
+        /// <summary>Devuelve un texto explicando qué le falta al NetworkManager, o null si está bien configurado.</summary>
+        public static string FindConfigurationError(NetworkManager manager)
         {
             if (manager == null) return "Falta el NetworkManager en la escena.";
             if (manager.NetworkConfig.NetworkTransport == null)
@@ -160,7 +168,7 @@ namespace NavalCommander.Networking
             {
                 if (args[i] == "-port" && ushort.TryParse(args[i + 1], out var p)) port = p;
                 if (args[i] == "-players" && int.TryParse(args[i + 1], out var n))
-                    SessionSettings.RequiredPlayers = Mathf.Clamp(n, 2, SessionSettings.MaxPlayers);
+                    _flow.SetRequiredPlayers(n);
             }
         }
 #endif
