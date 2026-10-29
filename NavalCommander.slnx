@@ -1,3 +1,6 @@
 ﻿<Solution>
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="NavalCommander.CardMechanics.csproj" />
+  <Project Path="NavalCommander.CardMechanics.Tests.csproj" />
+  <Project Path="NavalCommander.CardMechanics.PlayModeTests.csproj" />
 </Solution>
