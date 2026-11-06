@@ -58,6 +58,11 @@ namespace NavalCommander.Networking
         private void Update()
         {
             var manager = NetworkManager.Singleton;
+
+            // Al volver de una partida, el NetworkManager que sobrevive puede seguir apagándose durante Start.
+            // Sin este reintento conservaría el control anterior, con la entrada cerrada, y rechazaría a todos.
+            if (_gate == null) InstallGate();
+
             if (manager == null || !manager.IsServer || _loading) return;
 
             if (CountReadyPlayers() >= requiredPlayers)
