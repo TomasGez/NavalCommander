@@ -187,7 +187,8 @@ namespace NavalCommander.Gameplay
                 while (InBounds(x, y))
                 {
                     line.Add(new[] { x, y });
-                    if (_cells[y, x] == WallCell || ShipAt(before, x, y) != null) break; // el proyectil se detiene
+                    string occupant = ShipAt(before, x, y);
+                    if (_cells[y, x] == WallCell || (occupant != null && occupant != command.ShipId)) break; // el proyectil se detiene
                     x += stepX; y += stepY;
                 }
             }
@@ -201,7 +202,7 @@ namespace NavalCommander.Gameplay
             foreach (int[] cell in line)
             {
                 string targetId = ShipAt(before, cell[0], cell[1]);
-                if (targetId == null) continue;
+                if (targetId == null || targetId == command.ShipId) continue; // atraviesa su propio barco
 
                 int damage = definition.DamagePerHitCell;
                 if (defenses.TryGetValue(targetId, out var queue) && queue.Count > 0)

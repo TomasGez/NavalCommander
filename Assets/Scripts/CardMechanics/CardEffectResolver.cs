@@ -477,7 +477,8 @@ namespace NavalCommander.CardMechanics
                 }
 
                 CardShipState target = board.FindShipAt(x, y);
-                if (target != null)
+                // Un disparo atraviesa la celda de su propio barco y sigue su camino.
+                if (target != null && !ReferenceEquals(target, attacker))
                 {
                     ApplyIncomingAttack(target, attacker, definition.DamagePerHitCell, defensesByShip);
                     return;

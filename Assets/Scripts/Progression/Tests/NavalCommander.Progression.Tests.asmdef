@@ -1,0 +1,12 @@
+{
+  "name": "NavalCommander.Progression.Tests",
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "references": [
+    "NavalCommander.Progression"
+  ]
+}

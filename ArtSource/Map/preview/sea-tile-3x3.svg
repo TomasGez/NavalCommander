@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1536" height="1536" viewBox="0 0 1536 1536">
+  <image xlink:href="../sea-tile.png" x="0" y="0" width="512" height="512"/>
+  <image xlink:href="../sea-tile.png" x="512" y="0" width="512" height="512"/>
+  <image xlink:href="../sea-tile.png" x="1024" y="0" width="512" height="512"/>
+  <image xlink:href="../sea-tile.png" x="0" y="512" width="512" height="512"/>
+  <image xlink:href="../sea-tile.png" x="512" y="512" width="512" height="512"/>
+  <image xlink:href="../sea-tile.png" x="1024" y="512" width="512" height="512"/>
+  <image xlink:href="../sea-tile.png" x="0" y="1024" width="512" height="512"/>
+  <image xlink:href="../sea-tile.png" x="512" y="1024" width="512" height="512"/>
+  <image xlink:href="../sea-tile.png" x="1024" y="1024" width="512" height="512"/>
+</svg>

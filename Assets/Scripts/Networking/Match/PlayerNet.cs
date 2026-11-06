@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using NavalCommander.Progression;
 using Unity.Collections;
 using Unity.Netcode;
 
@@ -91,5 +92,11 @@ namespace NavalCommander.Networking
             for (int i = 0; i < ids.Length; i++) ids[i] = cardIds[i].ToString();
             MatchEvents.RaiseHandReceived(ids);
         }
+
+        /// <summary>Servidor -> solo el dueño de este jugador: el servidor decide la experiencia y el cliente la guarda.</summary>
+        public void SendWinXp(int amount) => ReceiveWinXpRpc(amount);
+
+        [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)] // solo el servidor puede otorgar experiencia
+        private void ReceiveWinXpRpc(int amount) => PlayerProgression.AddXp(amount);
     }
 }

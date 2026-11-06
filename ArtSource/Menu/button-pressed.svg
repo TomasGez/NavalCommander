@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+     width="320" height="88" viewBox="0 0 320 88">
+  <title>Menu button, pressed</title>
+  <sodipodi:namedview id="view" pagecolor="#0c1626" inkscape:pageopacity="0" inkscape:document-units="px"/>
+  <defs>
+    <linearGradient id="p-body" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="88">
+      <stop offset="0" stop-color="#174a8a"/>
+      <stop offset="1" stop-color="#1e5ba2"/>
+    </linearGradient>
+  </defs>
+  <g inkscape:groupmode="layer" inkscape:label="plate" id="layer-plate">
+    <rect id="p-plate" x="2.0" y="2.0" width="316" height="84" rx="18" fill="url(#p-body)" stroke="#070d18" stroke-width="4"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="rim" id="layer-rim">
+    <rect id="p-rim" x="7" y="7" width="306" height="74" rx="12" fill="none" stroke="#7dbbf5" stroke-width="2" opacity="0.4"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="light" id="layer-light">
+    <rect id="p-inset" x="10" y="9" width="300" height="9" rx="4.5" fill="#070d18" opacity="0.32"/>
+  </g>
+</svg>

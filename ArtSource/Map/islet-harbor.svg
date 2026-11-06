@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="512" height="512" viewBox="0 0 512 512">
+  <title>Decorative harbor islet for the open ocean, outside the play area</title>
+  <defs>
+    <path id="shape" d="M120 210 C120 130 200 90 270 96 C340 102 410 130 420 205 C428 265 398 300 400 345 C402 400 330 425 275 410 C225 396 195 420 150 395 C100 368 120 300 108 265 C102 245 118 230 120 210 Z"/>
+    <filter id="shoalBlur" color-interpolation-filters="sRGB" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <radialGradient id="lamp" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g inkscape:groupmode="layer" inkscape:label="Shoal">
+    <use xlink:href="#shape" transform="translate(256 256) scale(1.2) translate(-256 -256)" fill="#2f7f9a" opacity="0.6" filter="url(#shoalBlur)"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Foam and beach">
+    <use xlink:href="#shape" transform="translate(256 256) scale(1.05) translate(-256 -256)" fill="#e8f0fb" opacity="0.55"/>
+    <use xlink:href="#shape" fill="#a8a78c"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Land">
+    <use xlink:href="#shape" transform="translate(256 256) scale(0.86) translate(-256 -256)" fill="#2c4a45"/>
+    <g fill="#1d3633">
+      <circle cx="190" cy="170" r="30"/>
+      <circle cx="230" cy="150" r="26"/>
+      <circle cx="170" cy="210" r="24"/>
+      <circle cx="330" cy="170" r="28"/>
+      <circle cx="356" cy="210" r="22"/>
+      <circle cx="210" cy="330" r="26"/>
+      <circle cx="178" cy="306" r="20"/>
+    </g>
+    <g fill="#3b5f58">
+      <circle cx="184" cy="162" r="10"/>
+      <circle cx="226" cy="142" r="9"/>
+      <circle cx="326" cy="162" r="9"/>
+      <circle cx="205" cy="322" r="9"/>
+    </g>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Harbor">
+    <rect x="344" y="300" width="108" height="14" fill="#4d4436"/>
+    <rect x="404" y="300" width="14" height="52" fill="#4d4436"/>
+    <rect x="262" y="228" width="58" height="44" fill="#0a1322"/>
+    <rect x="262" y="228" width="58" height="10" fill="#14243d"/>
+    <rect x="288" y="288" width="44" height="34" fill="#0a1322"/>
+    <rect x="288" y="288" width="44" height="8" fill="#14243d"/>
+    <circle cx="291" cy="252" r="26" fill="url(#lamp)"/>
+    <circle cx="310" cy="308" r="20" fill="url(#lamp)"/>
+    <circle cx="446" cy="307" r="20" fill="url(#lamp)"/>
+    <g fill="#ffb347">
+      <rect x="272" y="246" width="8" height="8"/>
+      <rect x="298" y="246" width="8" height="8"/>
+      <rect x="306" y="304" width="7" height="7"/>
+      <circle cx="446" cy="307" r="4"/>
+    </g>
+  </g>
+</svg>

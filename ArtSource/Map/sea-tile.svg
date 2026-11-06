@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="512" height="512" viewBox="0 0 512 512">
+  <title>Play-area sea tile: 4x4 cells, one cell is 128 px</title>
+  <defs>
+    <filter id="soft" color-interpolation-filters="sRGB" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <g id="detail">
+      <g filter="url(#soft)">
+        <ellipse cx="96" cy="120" rx="78" ry="42" fill="#a8e0e8" opacity="0.20"/>
+        <ellipse cx="350" cy="60" rx="90" ry="38" fill="#3f8ba6" opacity="0.20"/>
+        <ellipse cx="500" cy="250" rx="84" ry="46" fill="#a8e0e8" opacity="0.18"/>
+        <ellipse cx="220" cy="320" rx="96" ry="44" fill="#3f8ba6" opacity="0.18"/>
+        <ellipse cx="60" cy="490" rx="88" ry="40" fill="#3f8ba6" opacity="0.16"/>
+        <ellipse cx="380" cy="440" rx="80" ry="44" fill="#a8e0e8" opacity="0.18"/>
+      </g>
+      <g fill="none" stroke="#e8f0fb" stroke-width="2" opacity="0.16">
+        <path d="M0 0 V512 M128 0 V512 M256 0 V512 M384 0 V512"/>
+        <path d="M0 0 H512 M0 128 H512 M0 256 H512 M0 384 H512"/>
+      </g>
+      <g fill="none" stroke="#3f8ba6" stroke-width="3" stroke-linecap="round" opacity="0.34">
+        <path d="M60 66 q14 -9 28 0 t28 0 t28 0"/>
+        <path d="M214 40 q12 -8 24 0 t24 0"/>
+        <path d="M372 112 q14 -9 28 0 t28 0"/>
+        <path d="M6 152 q12 -8 24 0 t24 0"/>
+        <path d="M150 206 q13 -8 26 0 t26 0 t26 0"/>
+        <path d="M322 236 q14 -9 28 0 t28 0"/>
+        <path d="M480 180 q14 -9 28 0 t28 0 t28 0"/>
+        <path d="M84 300 q12 -8 24 0 t24 0"/>
+        <path d="M264 372 q14 -9 28 0 t28 0 t28 0"/>
+        <path d="M440 346 q12 -8 24 0 t24 0"/>
+        <path d="M30 412 q14 -9 28 0 t28 0"/>
+        <path d="M186 470 q13 -8 26 0 t26 0"/>
+        <path d="M410 488 q14 -9 28 0 t28 0 t28 0"/>
+      </g>
+      <g fill="none" stroke="#d4f1f4" stroke-width="3" stroke-linecap="round" opacity="0.55">
+        <path d="M28 44 q14 -9 28 0 t28 0"/>
+        <path d="M160 96 q12 -8 24 0 t24 0"/>
+        <path d="M296 30 q15 -9 30 0 t30 0"/>
+        <path d="M452 86 q14 -9 28 0 t28 0 t28 0 t28 0"/>
+        <path d="M70 190 q13 -8 26 0 t26 0"/>
+        <path d="M222 150 q14 -9 28 0 t28 0"/>
+        <path d="M360 176 q12 -8 24 0 t24 0"/>
+        <path d="M18 268 q14 -9 28 0 t28 0 t28 0"/>
+        <path d="M166 276 q12 -8 24 0 t24 0"/>
+        <path d="M304 312 q13 -8 26 0 t26 0"/>
+        <path d="M430 280 q14 -9 28 0 t28 0"/>
+        <path d="M96 354 q14 -9 28 0 t28 0"/>
+        <path d="M222 416 q12 -8 24 0 t24 0"/>
+        <path d="M372 410 q15 -9 30 0 t30 0"/>
+        <path d="M112 502 q14 -9 28 0 t28 0"/>
+        <path d="M296 508 q13 -8 26 0 t26 0"/>
+        <path d="M474 506 q14 -9 28 0 t28 0 t28 0"/>
+      </g>
+    </g>
+  </defs>
+  <g inkscape:groupmode="layer" inkscape:label="Cells">
+    <rect width="512" height="512" fill="#72bccd"/>
+    <g fill="#93d2de">
+      <rect x="128" y="0" width="128" height="128"/>
+      <rect x="384" y="0" width="128" height="128"/>
+      <rect x="0" y="128" width="128" height="128"/>
+      <rect x="256" y="128" width="128" height="128"/>
+      <rect x="128" y="256" width="128" height="128"/>
+      <rect x="384" y="256" width="128" height="128"/>
+      <rect x="0" y="384" width="128" height="128"/>
+      <rect x="256" y="384" width="128" height="128"/>
+    </g>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Water detail (wraps on all sides)">
+    <use xlink:href="#detail"/>
+    <use xlink:href="#detail" x="-512" y="-512"/>
+    <use xlink:href="#detail" x="0" y="-512"/>
+    <use xlink:href="#detail" x="512" y="-512"/>
+    <use xlink:href="#detail" x="-512" y="0"/>
+    <use xlink:href="#detail" x="512" y="0"/>
+    <use xlink:href="#detail" x="-512" y="512"/>
+    <use xlink:href="#detail" x="0" y="512"/>
+    <use xlink:href="#detail" x="512" y="512"/>
+  </g>
+</svg>

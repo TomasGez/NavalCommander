@@ -1,0 +1,9 @@
+{
+  "name": "NavalCommander.Presentation.Cards.Tests",
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

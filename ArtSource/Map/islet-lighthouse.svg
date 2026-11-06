@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="320" height="320" viewBox="0 0 320 320">
+  <title>Decorative lighthouse islet for the open ocean, outside the play area</title>
+  <defs>
+    <path id="shape" d="M70 150 C72 112 104 106 124 84 C150 58 198 62 218 90 C232 110 262 122 256 158 C250 190 222 188 206 214 C186 246 140 258 112 232 C92 214 66 192 70 150 Z"/>
+    <clipPath id="body">
+      <use xlink:href="#shape"/>
+    </clipPath>
+    <filter id="shoalBlur" color-interpolation-filters="sRGB" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <radialGradient id="beam" gradientUnits="userSpaceOnUse" cx="165" cy="150" r="145">
+      <stop offset="0" stop-color="#ffd9a0" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ffd9a0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g inkscape:groupmode="layer" inkscape:label="Shoal">
+    <use xlink:href="#shape" transform="translate(160 160) scale(1.25) translate(-160 -160)" fill="#2f7f9a" opacity="0.6" filter="url(#shoalBlur)"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Foam and rock">
+    <use xlink:href="#shape" transform="translate(160 160) scale(1.06) translate(-160 -160)" fill="#e8f0fb" opacity="0.55"/>
+    <use xlink:href="#shape" fill="#24344d"/>
+    <g fill="#141f33" clip-path="url(#body)">
+      <path d="M80 150 L112 138 L124 176 L102 206 L84 188 Z"/>
+      <path d="M180 196 L222 182 L232 200 L196 234 L170 232 Z"/>
+    </g>
+    <g fill="#3d5472" clip-path="url(#body)">
+      <path d="M116 92 L160 80 L178 102 L140 122 Z"/>
+      <path d="M212 118 L242 136 L238 164 L208 158 Z"/>
+      <path d="M118 208 L152 202 L156 230 L132 234 Z"/>
+    </g>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Light beams" fill="url(#beam)">
+    <path d="M165 150 L304 96 L308 136 Z"/>
+    <path d="M165 150 L26 204 L22 164 Z"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Lighthouse">
+    <circle cx="165" cy="150" r="17" fill="#e8f0fb" stroke="#0a1322" stroke-width="3"/>
+    <circle cx="165" cy="150" r="9" fill="#b84a3f"/>
+    <circle cx="165" cy="150" r="4" fill="#ffb347"/>
+  </g>
+</svg>

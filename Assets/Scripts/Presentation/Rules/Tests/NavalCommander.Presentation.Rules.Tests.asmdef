@@ -1,0 +1,12 @@
+{
+  "name": "NavalCommander.Presentation.Rules.Tests",
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "references": [
+    "NavalCommander.Presentation.Rules"
+  ]
+}
