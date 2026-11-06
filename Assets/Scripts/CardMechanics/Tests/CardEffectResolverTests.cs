@@ -101,6 +101,45 @@ namespace NavalCommander.CardMechanics.Tests
             Assert.That(secondShip.Health, Is.EqualTo(100));
         }
 
+        [TestCase("attack_missile", 30)]
+        [TestCase("attack_torpedo", 50)]
+        public void BackwardShot_PassesThroughTheAttackerAndHitsTheShipBehind(string cardId, int expectedDamage)
+        {
+            var board = new CardBoardState(9, 7);
+            CardShipState attacker = board.AddShip(AttackerId, 3, 3, CardinalDirection.East);
+            CardShipState behind = board.AddShip("behind", 1, 3, CardinalDirection.East);
+
+            Resolve(board, new CardPlayCommand(AttackerId, cardId, RelativeDirection.Backward));
+
+            Assert.That(attacker.Health, Is.EqualTo(100));
+            Assert.That(behind.Health, Is.EqualTo(100 - expectedDamage));
+        }
+
+        [TestCase("attack_missile")]
+        [TestCase("attack_torpedo")]
+        public void BackwardShot_WithNoShipBehind_LeavesTheAttackerUnharmed(string cardId)
+        {
+            var board = new CardBoardState(9, 7);
+            CardShipState attacker = board.AddShip(AttackerId, 3, 3, CardinalDirection.East);
+
+            Resolve(board, new CardPlayCommand(AttackerId, cardId, RelativeDirection.Backward));
+
+            Assert.That(attacker.Health, Is.EqualTo(100));
+        }
+
+        [Test]
+        public void ForwardShot_StillHitsAnEnemyAhead()
+        {
+            var board = new CardBoardState(9, 7);
+            CardShipState attacker = board.AddShip(AttackerId, 1, 3, CardinalDirection.East);
+            CardShipState enemy = board.AddShip("enemy", 4, 3, CardinalDirection.West);
+
+            Resolve(board, new CardPlayCommand(AttackerId, "attack_missile", RelativeDirection.Forward));
+
+            Assert.That(enemy.Health, Is.EqualTo(70));
+            Assert.That(attacker.Health, Is.EqualTo(100));
+        }
+
         [TestCase(CardinalDirection.North)]
         [TestCase(CardinalDirection.East)]
         public void ThreeShot_DamagesTheCenteredThreeCellRowImmediatelyAhead(

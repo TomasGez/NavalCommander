@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+     xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+     width="128" height="128" viewBox="0 0 128 128">
+  <title>Panel behind the match HUD text column</title>
+  <sodipodi:namedview id="view" pagecolor="#0c1626" inkscape:pageopacity="0" inkscape:document-units="px"/>
+  <defs>
+
+  </defs>
+  <g inkscape:groupmode="layer" inkscape:label="panel" id="layer-panel">
+    <rect id="panel-fill" x="2" y="2" width="124" height="124" rx="14" fill="#14243d" fill-opacity="0.88" stroke="#3b8fe0" stroke-width="3"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="line" id="layer-line">
+    <rect id="panel-line" x="9" y="9" width="110" height="110" rx="9" fill="none" stroke="#1f3557" stroke-width="2"/>
+  </g>
+</svg>
