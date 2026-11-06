@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NavalCommander.CardMechanics;
 using NavalCommander.Gameplay;
+using NavalCommander.Progression;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -265,7 +266,19 @@ namespace NavalCommander.Networking
             if (!_rules.TryGetWinner(out int winner)) return false;
             WinnerSlot.Value = winner;
             Phase.Value = MatchPhase.Finished;
+            GrantWinXp(winner);
             return true;
+        }
+
+        // El servidor sortea la experiencia y solo se la envía al dueño del barco ganador.
+        private void GrantWinXp(int winner)
+        {
+            var rng = new System.Random();
+            foreach (var player in _players)
+            {
+                int xp = ProgressionRules.RollMatchXp(player.Slot.Value, winner, rng);
+                if (xp > 0) player.SendWinXp(xp);
+            }
         }
 
         // ---------------- Publicación del estado ----------------

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using NavalCommander.Progression;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -24,11 +25,28 @@ namespace NavalCommander.Networking
     {
         private const string SessionName = "Strategy Naval";
         private const double QuickJoinTimeoutSeconds = 5;
+        private const string BracketPropertyKey = "matchBracket";
+        private const float RivalCheckMinSeconds = 5f;
+        private const float RivalCheckMaxSeconds = 8f;
+        private const float ClientConnectTimeoutSeconds = 15f;
+        private const int LeaveTimeoutMilliseconds = 5000;
+        private const float ForgetFailedRoomsSeconds = 60f;
 
         private static SessionService _instance;
         private static bool _quitting;
 
         private readonly List<string> _previousSessionIds = new List<string>();
+
+        // Salas a las que ya falló la mudanza en esta búsqueda: no se reintentan.
+        private readonly HashSet<string> _failedRoomIds = new HashSet<string>();
+        private float _forgetFailedRoomsTime;
+        private bool _lookingForRival;
+        private bool _checkingForRival;
+        private float _nextRivalCheck;
+        // Tras entrar como cliente por búsqueda: si la conexión no llega a establecerse, se vuelve a buscar.
+        private bool _awaitingClientConnection;
+        private float _clientConnectDeadline;
+        private int _searchMaxPlayers;
 
         /// <summary>Instancia única; se crea sola si todavía no existe.</summary>
         public static SessionService Instance
@@ -64,6 +82,22 @@ namespace NavalCommander.Networking
 
         private void OnApplicationQuit() { _quitting = true; }
 
+        private void Update()
+        {
+            if (_awaitingClientConnection) CheckClientConnection();
+            if (!_lookingForRival || IsBusy || _checkingForRival) return;
+
+            if (Current == null || !Current.IsHost || Current.PlayerCount > 1)
+            {
+                _lookingForRival = false;
+                return;
+            }
+
+            if (Time.unscaledTime < _nextRivalCheck) return;
+            _nextRivalCheck = Time.unscaledTime + UnityEngine.Random.Range(RivalCheckMinSeconds, RivalCheckMaxSeconds);
+            _ = JoinLowerRoomIfAloneAsync();
+        }
+
         // ---------------- Operaciones ----------------
 
         /// <summary>Crea una sesión pública con Relay para "maxPlayers" jugadores; quien la crea es el host.</summary>
@@ -98,7 +132,8 @@ namespace NavalCommander.Networking
                 {
                     Filters = new List<FilterOption>
                     {
-                        new FilterOption(FilterField.AvailableSlots, "1", FilterOperation.GreaterOrEqual)
+                        new FilterOption(FilterField.AvailableSlots, "1", FilterOperation.GreaterOrEqual),
+                        new FilterOption(FilterField.StringIndex1, PlayerProgression.MatchBracket, FilterOperation.Equal)
                     },
                     Timeout = TimeSpan.FromSeconds(QuickJoinTimeoutSeconds),
                     CreateSession = true
@@ -107,12 +142,133 @@ namespace NavalCommander.Networking
                 Status = Current.IsHost
                     ? $"No había partidas: se creó una. Código: {Current.Code}"
                     : $"Unido a la partida {Current.Code}";
+
+                // Dos búsquedas simultáneas crean una sala cada una: el host solo sigue buscando a otros.
+                _lookingForRival = Current.IsHost;
+                _awaitingClientConnection = !Current.IsHost;
+                _clientConnectDeadline = Time.unscaledTime + ClientConnectTimeoutSeconds;
+                _searchMaxPlayers = maxPlayers;
+                _nextRivalCheck = Time.unscaledTime + UnityEngine.Random.Range(RivalCheckMinSeconds, RivalCheckMaxSeconds);
+            });
+        }
+
+        // Si otro host de este rango espera en una sala con id menor, se cierra la propia y se entra a la suya.
+        private async Task JoinLowerRoomIfAloneAsync()
+        {
+            ISession own = Current;
+            _checkingForRival = true;
+            string target = null;
+            try
+            {
+                var results = await MultiplayerService.Instance.QuerySessionsAsync(new QuerySessionsOptions
+                {
+                    FilterOptions = new List<FilterOption>
+                    {
+                        new FilterOption(FilterField.AvailableSlots, "1", FilterOperation.GreaterOrEqual),
+                        new FilterOption(FilterField.StringIndex1, PlayerProgression.MatchBracket, FilterOperation.Equal)
+                    }
+                });
+
+                var roomIds = new List<string>();
+                foreach (ISessionInfo info in results.Sessions) roomIds.Add(info.Id);
+                if (Time.unscaledTime >= _forgetFailedRoomsTime) _failedRoomIds.Clear();
+                target = MatchmakingRules.RoomToJoin(own.Id, roomIds, _failedRoomIds);
+                Debug.Log($"[Sesión] Salas visibles: {string.Join(", ", roomIds)}. Propia: {own.Id}. Destino: {target ?? "ninguno"}.");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Sesión] No se pudo consultar otras partidas: {e.Message}");
+            }
+            finally
+            {
+                _checkingForRival = false;
+            }
+
+            // Durante la consulta pudo entrar un rival o el jugador pudo salir: entonces no se mueve.
+            if (target == null || !_lookingForRival || IsBusy || Current != own || own.PlayerCount > 1) return;
+
+            _lookingForRival = false;
+            _searchMaxPlayers = own.MaxPlayers;
+            IsBusy = true;
+            bool joined = false;
+            try
+            {
+                await LeaveAsync();
+                Status = "Uniéndose a una partida encontrada...";
+                Debug.Log($"[Sesión] Mudanza: de la sala {own.Id} a {target}.");
+                Attach(await MultiplayerService.Instance.JoinSessionByIdAsync(target));
+                _awaitingClientConnection = true;
+                _clientConnectDeadline = Time.unscaledTime + ClientConnectTimeoutSeconds;
+                joined = true;
+                Status = $"Unido a la partida {Current.Code}";
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Sesión] No se pudo entrar a la sala {target}: {e.Message}");
+                MarkRoomFailed(target);
+                Current = null;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+            if (!joined) await CreateSearchRoomAsync(_searchMaxPlayers);
+        }
+
+        // Una sala fantasma acepta la unión pero nadie responde: Netcode se apaga sin llegar a conectar.
+        private void CheckClientConnection()
+        {
+            var manager = NetworkManager.Singleton;
+            if (Current == null) { _awaitingClientConnection = false; return; }
+            if (IsBusy || manager == null) return;
+
+            // Quedar de host sin haber conectado con nadie significa que el Lobby migró una sala sin host.
+            bool inheritedDeadRoom = Current.IsHost;
+            if (!inheritedDeadRoom)
+            {
+                if (manager.IsConnectedClient) { _awaitingClientConnection = false; return; }
+                // Justo después de unirse, Netcode todavía no escucha: solo el plazo decide que la sala no responde.
+                if (Time.unscaledTime < _clientConnectDeadline) return;
+            }
+
+            _awaitingClientConnection = false;
+            MarkRoomFailed(Current.Id);
+            Debug.LogWarning($"[Sesión] La sala {Current.Id} no respondió: se busca de nuevo.");
+            _ = RetrySearchAsync();
+        }
+
+        // El olvido evita que una sala viva, marcada por un fallo pasajero, bloquee a dos jugadores para siempre.
+        private void MarkRoomFailed(string roomId)
+        {
+            _failedRoomIds.Add(roomId);
+            _forgetFailedRoomsTime = Time.unscaledTime + ForgetFailedRoomsSeconds;
+        }
+
+        private async Task RetrySearchAsync()
+        {
+            await LeaveAsync();
+            await CreateSearchRoomAsync(_searchMaxPlayers);
+        }
+
+        // Quick Join no permite excluir salas y devolvería la misma sala muerta: se crea una propia
+        // y se sigue buscando rivales desde ella, ignorando las salas que ya fallaron.
+        private async Task CreateSearchRoomAsync(int maxPlayers)
+        {
+            await RunAsync("Buscando partida...", async () =>
+            {
+                Attach(await MultiplayerService.Instance.CreateSessionAsync(BuildSessionOptions(maxPlayers)));
+                Status = $"Esperando rivales. Código: {Current.Code}";
+                _lookingForRival = true;
+                _nextRivalCheck = Time.unscaledTime + UnityEngine.Random.Range(RivalCheckMinSeconds, RivalCheckMaxSeconds);
             });
         }
 
         /// <summary>Sale de la sesión (el host la elimina). El SDK cierra Relay y Netcode.</summary>
         public async Task LeaveAsync()
         {
+            _lookingForRival = false;
+            _awaitingClientConnection = false;
             ISession session = Current;
             Detach(session);
             Current = null;
@@ -122,7 +278,13 @@ namespace NavalCommander.Networking
                 if (session != null)
                 {
                     if (session.IsHost) await session.AsHost().DeleteAsync();
-                    else await session.LeaveAsync();
+                    else
+                    {
+                        // En una sala sin host esta llamada puede no terminar nunca: no debe trabar la salida.
+                        Task leave = session.LeaveAsync();
+                        if (await Task.WhenAny(leave, Task.Delay(LeaveTimeoutMilliseconds)) == leave) await leave;
+                        else Debug.LogWarning("[Sesión] Al salir: el servidor no respondió a tiempo.");
+                    }
                 }
             }
             catch (Exception e)
@@ -133,6 +295,8 @@ namespace NavalCommander.Networking
 
             var manager = NetworkManager.Singleton;
             if (manager != null && manager.IsListening) manager.Shutdown(); // por si el SDK no lo cerró
+            // El apagado termina en un frame posterior: una unión inmediata fallaría si no se espera.
+            while (manager != null && manager.ShutdownInProgress) await Task.Yield();
             Status = "Saliste de la partida";
         }
 
@@ -202,6 +366,8 @@ namespace NavalCommander.Networking
         private void HandleRemovedFromSession()
         {
             Debug.Log("[Sesión] Saliste de la partida (el host la cerró o te sacó).");
+            _lookingForRival = false;
+            _awaitingClientConnection = false;
             Detach(Current);
             Current = null;
             Status = "Saliste de la partida (el host la cerró o te sacó)";
@@ -215,7 +381,12 @@ namespace NavalCommander.Networking
             {
                 Name = SessionName,
                 MaxPlayers = maxPlayers,
-                IsPrivate = false // pública: aparece en la búsqueda
+                IsPrivate = false, // pública: aparece en la búsqueda
+                // Rango del creador, indexado para que "Buscar partida" solo encuentre partidas de su rango.
+                SessionProperties = new Dictionary<string, SessionProperty>
+                {
+                    [BracketPropertyKey] = new SessionProperty(PlayerProgression.MatchBracket, VisibilityPropertyOptions.Public, PropertyIndex.String1)
+                }
             }.WithRelayNetwork();
         }
 
@@ -285,23 +456,9 @@ namespace NavalCommander.Networking
             {
                 // Un perfil distinto por instancia: así los Virtual Players de Multiplayer Play Mode
                 // (o dos builds en la misma PC) no comparten el mismo jugador.
-                AuthenticationService.Instance.SwitchProfile(BuildProfileName());
+                AuthenticationService.Instance.SwitchProfile(PlayerProgression.ProfileName);
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
                 Debug.Log($"[Sesión] Autenticado. PlayerID: {AuthenticationService.Instance.PlayerId}");
-            }
-        }
-
-        private static string BuildProfileName()
-        {
-            string[] args = Environment.GetCommandLineArgs();
-            for (int i = 0; i < args.Length - 1; i++)
-                if (args[i] == "-profile") return args[i + 1];
-
-            unchecked
-            {
-                uint hash = 2166136261;
-                foreach (char c in Application.dataPath) { hash ^= c; hash *= 16777619; }
-                return "p" + hash.ToString("x8");
             }
         }
     }
