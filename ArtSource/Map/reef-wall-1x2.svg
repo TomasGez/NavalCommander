@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="160" height="288" viewBox="0 0 160 288">
+  <title>Reef over the two wall cells of map 01. One cell is 128 px; the body covers the 0.95 cell squares drawn by BoardView</title>
+  <defs>
+    <path id="outline" d="M12 24 L30 10 L58 15 L84 9 L112 13 L136 9 L149 24 L145 62 L150 98 L146 140 L149 182 L145 222 L148 268 L130 280 L100 273 L72 279 L42 274 L16 277 L11 250 L15 210 L10 170 L14 128 L10 88 L14 52 Z"/>
+    <clipPath id="body">
+      <use xlink:href="#outline"/>
+    </clipPath>
+    <filter id="soft" color-interpolation-filters="sRGB" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+    <radialGradient id="beacon" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffb347" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g inkscape:groupmode="layer" inkscape:label="Foam">
+    <use xlink:href="#outline" fill="none" stroke="#e8f0fb" stroke-width="6" stroke-linejoin="round" opacity="0.75" filter="url(#soft)"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Crevices (solid body)">
+    <use xlink:href="#outline" fill="#141f33"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Boulders, shaded side" clip-path="url(#body)" fill="#2b3d57">
+    <path d="M8 18 L44 6 L76 16 L84 52 L66 82 L28 90 L6 66 Z"/>
+    <path d="M88 4 L140 4 L154 34 L148 78 L116 92 L88 74 L80 36 Z"/>
+    <path d="M4 100 L34 92 L66 102 L74 142 L54 176 L18 178 L4 150 Z"/>
+    <path d="M78 98 L118 96 L154 106 L154 158 L124 178 L88 170 L72 138 Z"/>
+    <path d="M4 186 L44 182 L72 196 L76 238 L52 284 L10 284 L4 240 Z"/>
+    <path d="M84 180 L126 184 L154 196 L154 284 L96 284 L78 246 L80 210 Z"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Boulders, lit side" clip-path="url(#body)" fill="#425a7a">
+    <path d="M14 22 L44 12 L68 20 L72 46 L54 62 L26 66 L12 50 Z"/>
+    <path d="M92 10 L134 10 L144 32 L136 60 L110 68 L92 54 L86 34 Z"/>
+    <path d="M10 106 L34 98 L58 106 L62 134 L44 152 L20 152 L10 134 Z"/>
+    <path d="M84 104 L116 102 L144 112 L142 142 L118 154 L92 148 L80 128 Z"/>
+    <path d="M10 192 L44 188 L64 200 L66 230 L46 250 L18 250 L10 226 Z"/>
+    <path d="M90 188 L124 190 L144 202 L142 240 L112 254 L90 240 L86 212 Z"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Highlights" fill="#6c88aa">
+    <path d="M22 24 L44 18 L54 26 L38 38 L24 38 Z"/>
+    <path d="M100 16 L126 16 L130 26 L110 36 L98 30 Z"/>
+    <path d="M18 110 L36 104 L46 112 L30 122 L18 122 Z"/>
+    <path d="M92 110 L116 108 L126 116 L104 126 L90 122 Z"/>
+    <path d="M18 198 L42 194 L52 202 L34 214 L18 212 Z"/>
+    <path d="M98 194 L122 196 L130 206 L108 216 L96 210 Z"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Hazard beacons">
+    <circle cx="80" cy="92" r="17" fill="url(#beacon)"/>
+    <circle cx="80" cy="92" r="4.5" fill="#ffb347"/>
+    <circle cx="78" cy="180" r="17" fill="url(#beacon)"/>
+    <circle cx="78" cy="180" r="4.5" fill="#ffb347"/>
+  </g>
+</svg>

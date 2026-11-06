@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="256" height="256" viewBox="0 0 256 256">
+  <title>9-slice frame, 64 px borders. The edge of the sea sits at px 32 from the outside</title>
+  <defs>
+    <filter id="soft" color-interpolation-filters="sRGB" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <clipPath id="outside">
+      <path clip-rule="evenodd" d="M0 0 H256 V256 H0 Z M50 32 A18 18 0 0 0 32 50 V206 A18 18 0 0 0 50 224 H206 A18 18 0 0 0 224 206 V50 A18 18 0 0 0 206 32 Z"/>
+    </clipPath>
+    <clipPath id="inside">
+      <rect x="32" y="32" width="192" height="192" rx="18" ry="18"/>
+    </clipPath>
+  </defs>
+  <g inkscape:groupmode="layer" inkscape:label="Ocean fade (outside the sea)" clip-path="url(#outside)">
+    <rect x="14" y="14" width="228" height="228" rx="26" ry="26" fill="#14243d" filter="url(#soft)"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Inner shade (inside the sea)" clip-path="url(#inside)">
+    <rect x="32" y="32" width="192" height="192" rx="18" ry="18" fill="none" stroke="#14243d" stroke-width="12" opacity="0.5" filter="url(#soft)"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Foam lines" fill="none" stroke="#e8f0fb">
+    <rect x="32" y="32" width="192" height="192" rx="18" ry="18" stroke-width="4" opacity="0.9"/>
+    <rect x="41" y="41" width="174" height="174" rx="11" ry="11" stroke-width="1.5" opacity="0.4"/>
+  </g>
+</svg>

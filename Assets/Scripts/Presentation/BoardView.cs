@@ -30,8 +30,12 @@ namespace NavalCommander.Presentation
 
         [Header("Tablero")]
         [SerializeField] private bool showBoardFrame = true;
+        // Arte del mapa que representa los obstáculos: solo tiene sentido junto con el tablero dibujado.
+        [SerializeField] private string reefObjectName = "Map_ReefWall";
 
         private BoardLayout _layout;
+        private GameObject _reef;
+        private bool _boardDrawn;
         private readonly Dictionary<int, ShipView> _ships = new Dictionary<int, ShipView>();
         private readonly Dictionary<int, GameObject> _markers = new Dictionary<int, GameObject>();
         private readonly List<GameObject> _staticObjects = new List<GameObject>(); // marco y obstáculos
@@ -41,6 +45,8 @@ namespace NavalCommander.Presentation
         private void Awake()
         {
             _layout = GetComponent<BoardLayout>();
+            // Se guarda la referencia: GameObject.Find no encuentra un objeto desactivado para volver a mostrarlo.
+            _reef = GameObject.Find(reefObjectName);
             // Los efectos del turno se crean solos (la escena no necesita un componente extra).
             _effects = GetComponent<TurnEffectsView>();
             if (_effects == null && !Application.isBatchMode) _effects = gameObject.AddComponent<TurnEffectsView>();
@@ -58,10 +64,15 @@ namespace NavalCommander.Presentation
             if (Application.isBatchMode) return; // un servidor dedicado no dibuja
 
             var manager = NetworkManager.Singleton;
-            if (manager == null || !manager.IsListening) { ClearAll(); return; }
+            bool connected = manager != null && manager.IsListening;
+            var match = connected ? MatchController.Instance : null;
+            bool hasShips = match != null && match.IsSpawned && match.Ships != null && match.Ships.Count > 0;
 
-            var match = MatchController.Instance;
-            if (match == null || !match.IsSpawned || match.Ships == null || match.Ships.Count == 0) return;
+            _boardDrawn = BoardPresence.Next(_boardDrawn, connected, hasShips);
+            if (_reef != null && _reef.activeSelf != _boardDrawn) _reef.SetActive(_boardDrawn);
+
+            if (!connected) { ClearAll(); return; }
+            if (!hasShips) return;
 
             Render(match);
         }

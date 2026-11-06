@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="512" height="512" viewBox="0 0 512 512">
+  <title>Open ocean tile around the play area, palette from the menu background</title>
+  <defs>
+    <filter id="soft" color-interpolation-filters="sRGB" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <g id="detail">
+      <g filter="url(#soft)">
+        <ellipse cx="120" cy="90" rx="120" ry="56" fill="#1a3352" opacity="0.8"/>
+        <ellipse cx="400" cy="210" rx="130" ry="60" fill="#0f1c31" opacity="0.7"/>
+        <ellipse cx="150" cy="340" rx="110" ry="52" fill="#0f1c31" opacity="0.6"/>
+        <ellipse cx="420" cy="460" rx="124" ry="58" fill="#1a3352" opacity="0.8"/>
+      </g>
+      <g fill="none" stroke="#2a4a72" stroke-width="3" stroke-linecap="round" opacity="0.55">
+        <path d="M24 60 q20 -11 40 0 t40 0 t40 0"/>
+        <path d="M250 34 q18 -10 36 0 t36 0"/>
+        <path d="M440 110 q20 -11 40 0 t40 0 t40 0"/>
+        <path d="M110 176 q18 -10 36 0 t36 0 t36 0"/>
+        <path d="M320 232 q20 -11 40 0 t40 0"/>
+        <path d="M6 288 q18 -10 36 0 t36 0"/>
+        <path d="M190 330 q20 -11 40 0 t40 0 t40 0"/>
+        <path d="M430 356 q18 -10 36 0 t36 0"/>
+        <path d="M60 438 q20 -11 40 0 t40 0"/>
+        <path d="M300 460 q18 -10 36 0 t36 0 t36 0"/>
+        <path d="M470 506 q18 -10 36 0 t36 0 t36 0"/>
+      </g>
+      <g fill="none" stroke="#3f6494" stroke-width="2" stroke-linecap="round" opacity="0.45">
+        <path d="M180 100 q12 -7 24 0 t24 0"/>
+        <path d="M390 60 q12 -7 24 0 t24 0"/>
+        <path d="M30 210 q12 -7 24 0 t24 0"/>
+        <path d="M250 270 q12 -7 24 0 t24 0"/>
+        <path d="M440 256 q12 -7 24 0 t24 0"/>
+        <path d="M120 390 q12 -7 24 0 t24 0"/>
+        <path d="M360 400 q12 -7 24 0 t24 0"/>
+        <path d="M200 500 q12 -7 24 0 t24 0"/>
+      </g>
+    </g>
+  </defs>
+  <g inkscape:groupmode="layer" inkscape:label="Base">
+    <rect width="512" height="512" fill="#14243d"/>
+  </g>
+  <g inkscape:groupmode="layer" inkscape:label="Water detail (wraps on all sides)">
+    <use xlink:href="#detail"/>
+    <use xlink:href="#detail" x="-512" y="-512"/>
+    <use xlink:href="#detail" x="0" y="-512"/>
+    <use xlink:href="#detail" x="512" y="-512"/>
+    <use xlink:href="#detail" x="-512" y="0"/>
+    <use xlink:href="#detail" x="512" y="0"/>
+    <use xlink:href="#detail" x="-512" y="512"/>
+    <use xlink:href="#detail" x="0" y="512"/>
+    <use xlink:href="#detail" x="512" y="512"/>
+  </g>
+</svg>

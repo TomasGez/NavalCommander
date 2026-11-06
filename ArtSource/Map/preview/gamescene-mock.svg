@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <pattern id="deep" patternUnits="userSpaceOnUse" x="744" y="324" width="432" height="432"><image xlink:href="../deep-sea-tile.png" width="432" height="432"/></pattern>
+    <pattern id="sea" patternUnits="userSpaceOnUse" x="852" y="432" width="216" height="216"><image xlink:href="../sea-tile.png" width="216" height="216"/></pattern>
+    <clipPath id="c1"><rect x="501.0" y="81.0" width="54" height="54"/></clipPath>
+    <clipPath id="c2"><rect x="555.0" y="81.0" width="810" height="54"/></clipPath>
+    <clipPath id="c3"><rect x="1365.0" y="81.0" width="54" height="54"/></clipPath>
+    <clipPath id="c4"><rect x="501.0" y="135.0" width="54" height="810"/></clipPath>
+    <clipPath id="c5"><rect x="1365.0" y="135.0" width="54" height="810"/></clipPath>
+    <clipPath id="c6"><rect x="501.0" y="945.0" width="54" height="54"/></clipPath>
+    <clipPath id="c7"><rect x="555.0" y="945.0" width="810" height="54"/></clipPath>
+    <clipPath id="c8"><rect x="1365.0" y="945.0" width="54" height="54"/></clipPath>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#deep)"/>
+  <rect x="528" y="108" width="864" height="864" fill="url(#sea)"/>
+  <g clip-path="url(#c1)"><image xlink:href="../sea-border.png" width="256" height="256" preserveAspectRatio="none" transform="translate(501.0 81.0) scale(0.84375 0.84375)"/></g>
+  <g clip-path="url(#c2)"><image xlink:href="../sea-border.png" width="256" height="256" preserveAspectRatio="none" transform="translate(150.0 81.0) scale(6.328125 0.84375)"/></g>
+  <g clip-path="url(#c3)"><image xlink:href="../sea-border.png" width="256" height="256" preserveAspectRatio="none" transform="translate(1203.0 81.0) scale(0.84375 0.84375)"/></g>
+  <g clip-path="url(#c4)"><image xlink:href="../sea-border.png" width="256" height="256" preserveAspectRatio="none" transform="translate(501.0 -270.0) scale(0.84375 6.328125)"/></g>
+  <g clip-path="url(#c5)"><image xlink:href="../sea-border.png" width="256" height="256" preserveAspectRatio="none" transform="translate(1203.0 -270.0) scale(0.84375 6.328125)"/></g>
+  <g clip-path="url(#c6)"><image xlink:href="../sea-border.png" width="256" height="256" preserveAspectRatio="none" transform="translate(501.0 783.0) scale(0.84375 0.84375)"/></g>
+  <g clip-path="url(#c7)"><image xlink:href="../sea-border.png" width="256" height="256" preserveAspectRatio="none" transform="translate(150.0 783.0) scale(6.328125 0.84375)"/></g>
+  <g clip-path="url(#c8)"><image xlink:href="../sea-border.png" width="256" height="256" preserveAspectRatio="none" transform="translate(1203.0 783.0) scale(0.84375 0.84375)"/></g>
+  <image xlink:href="../islet-harbor.png" x="1554.0" y="270.0" width="216" height="216"/>
+  <image xlink:href="../islet-lighthouse.png" x="357.9" y="116.10000000000002" width="135.0" height="135.0"/>
+  <rect x="636" y="270" width="648" height="486" fill="none" stroke="#000" stroke-opacity="0.7" stroke-width="3.2399999999999998"/>
+  <rect x="745.35" y="649.35" width="51.3" height="51.3" fill="#595959"/>
+  <rect x="745.35" y="595.35" width="51.3" height="51.3" fill="#595959"/>
+  <image xlink:href="../reef-wall-1x2.png" x="737.25" y="587.25" width="67.5" height="121.5"/>
+  <rect x="636.0" y="540.0" width="54" height="54" fill="#0000ff" fill-opacity="0.35"/>
+  <rect x="641.4" y="545.4" width="43.2" height="43.2" fill="#0000ff"/>
+  <rect x="852.0" y="540.0" width="54" height="54" fill="#ff8c00" fill-opacity="0.35"/>
+  <rect x="857.4" y="545.4" width="43.2" height="43.2" fill="#ff8c00"/>
+  <rect x="636.0" y="270.0" width="54" height="54" fill="#00991a" fill-opacity="0.35"/>
+  <rect x="641.4" y="275.4" width="43.2" height="43.2" fill="#00991a"/>
+  <rect x="852.0" y="270.0" width="54" height="54" fill="#9900cc" fill-opacity="0.35"/>
+  <rect x="857.4" y="275.4" width="43.2" height="43.2" fill="#9900cc"/>
+  <rect x="1068.0" y="378.0" width="54" height="54" fill="#666666" fill-opacity="0.35"/>
+  <rect x="1073.4" y="383.4" width="43.2" height="43.2" fill="#666666"/>
+</svg>
